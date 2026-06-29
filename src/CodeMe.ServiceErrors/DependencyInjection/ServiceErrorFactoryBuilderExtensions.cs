@@ -36,6 +36,20 @@ public static class ServiceErrorFactoryBuilderExtensions
         new ServiceErrorFactoryBuilder<TErrorFactory>(services, rootErrorGroup, implementationType);
 
     /// <summary>
+    /// Returns a builder to allow further configuration of the service error factory.
+    /// </summary>
+    public static IServiceErrorFactoryBuilder UpdateServiceErrors(this IServiceCollection services) =>
+        services.UpdateServiceErrors<IServiceErrorFactory>();
+
+    /// <summary>
+    /// Returns a builder to allow further configuration of the service error factory.
+    /// </summary>
+    /// <typeparam name="TErrorFactory">Marker interface for typed error factory.</typeparam>
+    public static IServiceErrorFactoryBuilder UpdateServiceErrors<TErrorFactory>(this IServiceCollection services)
+        where TErrorFactory : class, IServiceErrorFactory =>
+        new ServiceErrorFactoryBuilder<TErrorFactory>(services);
+
+    /// <summary>
     /// Adds well-known errors defined in the specified type <paramref name="wellKnownErrorsType"/>.
     /// </summary>
     public static IServiceErrorFactoryBuilder Add(

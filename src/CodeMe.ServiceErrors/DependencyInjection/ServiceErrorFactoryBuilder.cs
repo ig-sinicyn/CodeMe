@@ -9,6 +9,11 @@ namespace CodeMe.ServiceErrors.DependencyInjection;
 internal sealed class ServiceErrorFactoryBuilder<TErrorFactory> : IServiceErrorFactoryBuilder
     where TErrorFactory : class, IServiceErrorFactory
 {
+    public ServiceErrorFactoryBuilder(IServiceCollection services)
+    {
+        Services = services;
+    }
+
     public ServiceErrorFactoryBuilder(
         IServiceCollection services,
         ErrorGroupUri rootErrorGroup,

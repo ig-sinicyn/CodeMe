@@ -237,6 +237,7 @@ The DI extensions support three common registration patterns:
 - Register well-known error types from an assembly and its referenced assemblies.
 
 ```csharp
+using CodeMe.ServiceErrors;
 using CodeMe.ServiceErrors.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using static WellKnownOrderApiErrors;
@@ -273,14 +274,14 @@ using CodeMe.ServiceErrors.Serializable;
 using Microsoft.Extensions.DependencyInjection;
 using static WellKnownOrderApiErrors;
 
-public interface IOrdersErrorFactory : IServiceErrorFactory
-{
-}
-
 var services = new ServiceCollection();
 services
     .AddServiceErrors<IOrdersErrorFactory>(RootGroup)
     .Add(typeof(WellKnownOrderApiErrors));
+
+public interface IOrdersErrorFactory : IServiceErrorFactory
+{
+}
 ```
 
 With this setup, the container can resolve `IOrdersErrorFactory` as a typed service error factory while still using the same well-known error registration model.

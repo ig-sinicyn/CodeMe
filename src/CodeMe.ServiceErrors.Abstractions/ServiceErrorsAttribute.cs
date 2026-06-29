@@ -1,3 +1,5 @@
+using CodeMe.ServiceErrors.Serializable;
+
 namespace CodeMe.ServiceErrors;
 
 /// <summary>
@@ -7,6 +9,4 @@ namespace CodeMe.ServiceErrors;
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class ServiceErrorsAttribute : Attribute
 {
-    // See the attribute guidelines at
-    //  http://go.microsoft.com/fwlink/?LinkId=85236
 }

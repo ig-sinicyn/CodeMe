@@ -27,9 +27,11 @@ public readonly record struct ServiceError(
             _ => []
         };
 
+    /// <inheritdoc/>
     public bool Equals(ServiceError other) =>
         Descriptor.Equals(other.Descriptor)
         && string.Equals(Message, other.Message, StringComparison.Ordinal);
 
+    /// <inheritdoc/>
     public override int GetHashCode() => HashCode.Combine(Descriptor, Message);
 }
