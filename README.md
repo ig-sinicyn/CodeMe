@@ -1,6 +1,10 @@
+# CodeMe
+
+CodeMe is a set of small, focused, reusable libraries aimed to reduce amount of boring boilerplate code in .NET applications. 
+
 # CodeMe.ServiceErrors
 
-CodeMe.ServiceErrors is a small library for describing service-level errors as first-class values and turning them into serializable payloads or exceptions. It is designed for APIs, background services, and distributed systems where you want a stable error contract across boundaries.
+CodeMe.ServiceErrors is a library for describing service-level errors as first-class values and turning them into serializable payloads or exceptions. It is designed for APIs, background services, and distributed systems where you want a stable error contract across app boundaries.
 
 ## Introduction
 
@@ -9,9 +13,9 @@ The core model is built around a few simple concepts:
 * `ServiceError` carries well-known error descriptor together with a human-friendly message and optional inner details.
 * `ErrorDescriptor` describes an error with a problem type (error URI), HTTP-like status, transience, and severity.
 * `ErrorUri` and `ErrorGroupUri` represent problem type URI inspired by [RFC 9457: Problem Details for HTTP APIs](https://datatracker.ietf.org/doc/html/rfc9457).
-* `ServiceErrorDto` is a serializable representation of a `ServiceError` that can be used for transport or logging.
+* `ServiceErrorDto` represents serializable service error format.
 * `ServiceException` and `IServiceException` allow to pass service errors as exceptions.
-* `IServiceErrorFactory` is a middleware-level / mapping-level api that converts between `ServiceError`, `ServiceErrorDto`, and exceptions.
+* `IServiceErrorFactory` converts between `ServiceError`, `ServiceErrorDto`, and `IServiceException`.
 
 Typical usage scenarios include:
 
@@ -106,10 +110,10 @@ internal sealed class OrderNotFoundException : ServiceException
 ### Checking for well-known errors
 
 All error-related types do provide `Matches(...)` / `MatchesAny()` methods. Match logic works as follows:
-* x matches to StatusCode: exact match
-* x matches to ErrorUri: exact match
-* x matches to ErrorGroupUri: match if x.Group is descendant of specified error group
-* x matches to ErrorDescriptor: match if x.Type and x.StatusCode are equal to descriptor's type and status code
+* x matches to StatusCode: exact match.
+* x matches to ErrorUri: exact match.
+* x matches to ErrorGroupUri: match if x.Group is descendant of specified error group.
+* x matches to ErrorDescriptor: match if x.Type and x.StatusCode are equal to descriptor's type and status code.
 
 Example usage:
 ```csharp
@@ -137,7 +141,7 @@ if (notFoundDescriptor.MatchesAny(rootGroup, otherAppGroup))
 try
 {
 }
-catch (ServiceException ex) when orders(ex.Matches(notFoundErrorUri))
+catch (ServiceException ex) when (ex.Matches(notFoundErrorUri))
 {
 }
 
@@ -153,7 +157,7 @@ catch (Exception ex)
 
 ### Serialization
 
-To convert between a rich in-process `ServiceError` and a serializable `ServiceErrorDto`, use `IServiceErrorFactory`.
+To convert between a `ServiceError` and a serializable `ServiceErrorDto`, use `IServiceErrorFactory`.
 
 ```csharp
 using CodeMe.ServiceErrors;
@@ -204,7 +208,7 @@ ServiceError restoredError = factory.CreateError((Exception)exception);
 
 #### Unknown exceptions
 
-If exception is not registered, the `IServiceErrorFactory.CreateError()` method will return ServiceException with error code derived from exceptions'type.
+If exception is not registered, the `IServiceErrorFactory.CreateError()` method will return ServiceException with error code derived from exception's type.
 
 ```csharp
 using CodeMe.ServiceErrors;
@@ -235,51 +239,67 @@ The DI extensions support three common registration patterns:
 ```csharp
 using CodeMe.ServiceErrors.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
+using static WellKnownOrderApiErrors;
 
 var services = new ServiceCollection();
 
 services
-    .AddServiceErrors(OrderErrors.RootGroup)
-    .Add(typeof(OrderErrors));
+    .AddServiceErrors(RootGroup)
+    .Add(typeof(WellKnownOrderApiErrors));
+
+// or
+services
+    .AddServiceErrors(RootGroup)
+    .AddAssembly(typeof(WellKnownOrderApiErrors).Assembly, filterByServiceErrorsAttribute: false);
 
 services
-    .AddServiceErrors(OrderErrors.RootGroup)
-    .AddAssembly(typeof(OrderErrors).Assembly, filterByServiceErrorsAttribute: false);
-
-services
-    .AddServiceErrors(OrderErrors.RootGroup)
+    .AddServiceErrors(RootGroup)
     .AddAssemblyAndDependencies(
-        typeof(OrderErrors).Assembly,
-        referenceNamePrefix: "MyCompany",
-        filterByServiceErrorsAttribute: false);
+        typeof(WellKnownOrderApiErrors).Assembly,
+        referenceNamePrefix: "CodeMe.",
+        filterByServiceErrorsAttribute: true);
 ```
 
-The `Add` overload registers the static error container type directly. `AddAssembly` scans a single assembly for static classes marked with `[ServiceErrors]` or for classes containing public static fields of well-known error types, depending on the `filterByServiceErrorsAttribute` flag. `AddAssemblyAndDependencies` walks the assembly graph and registers error definitions from matching dependencies.
+The `Add` overload registers the static error container type directly. `AddAssembly` scans a single assembly for static classes marked with `[ServiceErrors]` or for classes containing public static fields of well-known error types, depending on the `filterByServiceErrorsAttribute` flag. `AddAssemblyAndDependencies` walks the assembly graph and registers error definitions from matching dependencies. If `referenceNamePrefix` is specified, only root assembly and assemblies whose name starts with the prefix will be scanned.
 
-### Typed error factories and per-factory well-known error registration
+#### Typed error factories and per-factory well-known error registration
 
-You can register a typed error factory in addition to the default factory. This is useful when you want one factory abstraction per service or module. The builder returned by `AddServiceErrors<TErrorFactory>` can be used to register well-known errors for that specific factory.
+In some cases it is useful to have a custom error factory configuration instead of the default one. As example, you may want to have a specialized error factory for client of some external service and do not want external service errors to be used across the rest of your application. Meet the typed factory concept. You have to create a marker interface derived from `IServiceErrorFactory` and use it as a type argument for the `AddServiceErrors<TErrorFactory>()` call.
 
 ```csharp
 using CodeMe.ServiceErrors;
 using CodeMe.ServiceErrors.DependencyInjection;
 using CodeMe.ServiceErrors.Serializable;
 using Microsoft.Extensions.DependencyInjection;
+using static WellKnownOrderApiErrors;
 
 public interface IOrdersErrorFactory : IServiceErrorFactory
 {
 }
 
-public sealed class OrdersErrorFactory(
-    Func<IServiceErrorFactoryOptions> optionsAccessor)
-    : DefaultServiceErrorFactory(optionsAccessor), IOrdersErrorFactory
-{
-}
-
 var services = new ServiceCollection();
 services
-    .AddServiceErrors<IOrdersErrorFactory>(OrderErrors.RootGroup, typeof(OrdersErrorFactory))
-    .Add(typeof(OrderErrors));
+    .AddServiceErrors<IOrdersErrorFactory>(RootGroup)
+    .Add(typeof(WellKnownOrderApiErrors));
 ```
 
 With this setup, the container can resolve `IOrdersErrorFactory` as a typed service error factory while still using the same well-known error registration model.
+
+### DI-free error factory
+
+For scenarios where you do not want to use DI, you can create a service error factory directly using `DefaultServiceErrorFactoryBuilder`. Same configuration, no DI.
+
+```csharp
+using CodeMe.ServiceErrors;
+using CodeMe.ServiceErrors.Serializable;
+using CodeMe.ServiceErrors.Serializable.Builders;
+using static WellKnownOrderApiErrors;
+
+var factory = new DefaultServiceErrorFactoryBuilder(RootGroup)
+    .Add(typeof(WellKnownOrderApiErrors))
+    .Build();
+
+var serviceError = new ServiceError(OrderNotFound, "Order 404 was not found");
+
+ServiceErrorDto dto = factory.CreateDto(serviceError);
+```

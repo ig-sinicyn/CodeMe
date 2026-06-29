@@ -29,7 +29,12 @@ public sealed class DefaultServiceErrorFactoryBuilder
     }
 
     /// <summary>
+    /// Builds and returns an instance of service error factory options.
+    /// </summary>
+    public IServiceErrorFactoryOptions BuildOptions() => DefaultServiceErrorFactoryOptions.Create(_options);
+
+    /// <summary>
     /// Builds and returns an instance of the service error factory.
     /// </summary>
-    public IServiceErrorFactory Build() => new DefaultServiceErrorFactory(_options);
+    public IServiceErrorFactory Build() => new DefaultServiceErrorFactory(BuildOptions());
 }
