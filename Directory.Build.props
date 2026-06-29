@@ -1,0 +1,35 @@
+<Project>
+
+	<PropertyGroup>
+		<UseArtifactsOutput>true</UseArtifactsOutput>
+		<ArtifactsPath>$(MSBuildThisFileDirectory).artifacts/</ArtifactsPath>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<IsTestProject>false</IsTestProject>
+		<IsTestProject Condition="$([System.String]::Copy('$(MSBuildProjectName)').EndsWith('.UnitTests'))">true</IsTestProject>
+		<TestProjectBaseName Condition="'$(IsTestProject)' == 'true'">$([System.String]::Copy('$(MSBuildProjectName)').Replace('.UnitTests',''))</TestProjectBaseName>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(IsTestProject)' != 'true'">
+		<InternalsVisibleTo Include="$(MSBuildProjectName).UnitTests" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(IsTestProject)' == 'true'">
+		<PackageReference Include="AwesomeAssertions" />
+		<PackageReference Include="coverlet.collector" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="xunit" />
+		<PackageReference Include="xunit.runner.visualstudio" />
+		<ProjectReference Include="$(MSBuildThisFileDirectory)src\$(TestProjectBaseName)\$(TestProjectBaseName).csproj" />
+		<Using Include="AwesomeAssertions" />
+		<Using Include="Xunit" />
+	</ItemGroup>
+
+</Project>

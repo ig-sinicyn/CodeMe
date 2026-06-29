@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/env/">
+    <Project Path="env/env.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/CodeMe.ServiceErrors.Abstractions/CodeMe.ServiceErrors.Abstractions.csproj" Id="e04b04e8-ff7b-47e4-89e2-b9c87295c0c2" />
+    <Project Path="src/CodeMe.ServiceErrors/CodeMe.ServiceErrors.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CodeMe.ServiceErrors.Abstractions.UnitTests/CodeMe.ServiceErrors.Abstractions.UnitTests.csproj" Id="e5bd77fa-a78a-4e30-a69b-1d03531274dd" />
+    <Project Path="tests/CodeMe.ServiceErrors.UnitTests/CodeMe.ServiceErrors.UnitTests.csproj" />
+  </Folder>
+</Solution>
