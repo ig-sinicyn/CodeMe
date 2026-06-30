@@ -4,13 +4,16 @@
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<RootNamespace>CodeMe.ServiceErrors</RootNamespace>
 		<LangVersion>latest</LangVersion>
+
+		<Description>Library for typed service errors (Problem Details-alike DTOs)</Description>
+		<PackageTags>errors;typed_errors</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="PolySharp">
-	    <PrivateAssets>all</PrivateAssets>
-	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-	  </PackageReference>
+		<PackageReference Include="PolySharp">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
 </Project>

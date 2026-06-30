@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.7.0">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\.github\**\*.*">
+			<Link>.github\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</None>
+	</ItemGroup>
+
+</Project>

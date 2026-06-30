@@ -1,6 +1,10 @@
 <Project>
 
 	<PropertyGroup>
+		<ServiceErrorsVersion>0.0.1</ServiceErrorsVersion>
+	</PropertyGroup>
+
+	<PropertyGroup>
 		<UseArtifactsOutput>true</UseArtifactsOutput>
 		<ArtifactsPath>$(MSBuildThisFileDirectory).artifacts/</ArtifactsPath>
 	</PropertyGroup>
@@ -8,6 +12,13 @@
 	<PropertyGroup>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<IsSrcProject>false</IsSrcProject>
+		<IsSrcProject Condition="$([System.String]::new('$(MSBuildProjectDirectory)').ToLower().Contains('\src\'))">true</IsSrcProject>
+		<IsSrcProject Condition="$([System.String]::new('$(MSBuildProjectDirectory)').ToLower().Contains('/src/'))">true</IsSrcProject>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -16,7 +27,17 @@
 		<TestProjectBaseName Condition="'$(IsTestProject)' == 'true'">$([System.String]::Copy('$(MSBuildProjectName)').Replace('.UnitTests',''))</TestProjectBaseName>
 	</PropertyGroup>
 
-	<ItemGroup Condition="'$(IsTestProject)' != 'true'">
+	<PropertyGroup Condition="'$(IsSrcProject)' == 'true'">
+		<IsPackable>true</IsPackable>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<Authors>Igor Sinicyn</Authors>
+		<Company>CodeMe</Company>
+		<PackageProjectUrl>https://github.com/ig-sinicyn/CodeMe</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/ig-sinicyn/CodeMe.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(IsSrcProject)' == 'true'">
 		<InternalsVisibleTo Include="$(MSBuildProjectName).UnitTests" />
 	</ItemGroup>
 
