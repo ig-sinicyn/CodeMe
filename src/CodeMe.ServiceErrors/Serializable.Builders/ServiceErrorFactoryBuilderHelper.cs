@@ -31,6 +31,10 @@ public static class ServiceErrorFactoryBuilderHelper
         {
             yield return current;
         }
+        else
+        {
+            yield break;
+        }
 
         foreach (var referencedAssemblyName in current.GetReferencedAssemblies())
         {

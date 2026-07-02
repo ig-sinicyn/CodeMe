@@ -26,7 +26,7 @@ jobs:
       run: dotnet build --no-restore
 
     - name: Test
-      run: dotnet test --no-build --logger "trx;LogFileName=test-results.trx" || true
+      run:  dotnet test --report-trx --results-directory=".artifacts/test-results" || true
 
     - name: Test Report
       uses: dorny/test-reporter@v1
