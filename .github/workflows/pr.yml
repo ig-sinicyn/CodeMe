@@ -33,6 +33,6 @@ jobs:
       if: always()
       with:
         name: .NET Core Tests
-        path: "**/test-results.trx"
+        path: ".artifacts/test-results/**/*.trx"
         reporter: dotnet-trx
         fail-on-error: true
