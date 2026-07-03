@@ -5,8 +5,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="..\.github\**\*.*">
-			<Link>.github\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		<None Include="../.github/**/*.*">
+			<Link>.github/%(RecursiveDir)%(Filename)%(Extension)</Link>
 		</None>
 	</ItemGroup>
 

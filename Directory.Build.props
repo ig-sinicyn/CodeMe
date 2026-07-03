@@ -1,10 +1,6 @@
 <Project>
 
 	<PropertyGroup>
-		<ServiceErrorsVersion>0.0.1</ServiceErrorsVersion>
-	</PropertyGroup>
-
-	<PropertyGroup>
 		<UseArtifactsOutput>true</UseArtifactsOutput>
 		<ArtifactsPath>$(MSBuildThisFileDirectory).artifacts/</ArtifactsPath>
 	</PropertyGroup>
@@ -15,6 +11,11 @@
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+	</PropertyGroup>
+
 	<PropertyGroup>
 		<IsSrcProject>false</IsSrcProject>
 		<IsSrcProject Condition="$([System.String]::new('$(MSBuildProjectDirectory)').ToLower().Contains('\src\'))">true</IsSrcProject>
@@ -23,8 +24,9 @@
 
 	<PropertyGroup>
 		<IsTestProject>false</IsTestProject>
-		<IsTestProject Condition="$([System.String]::Copy('$(MSBuildProjectName)').EndsWith('.UnitTests'))">true</IsTestProject>
-		<TestProjectBaseName Condition="'$(IsTestProject)' == 'true'">$([System.String]::Copy('$(MSBuildProjectName)').Replace('.UnitTests',''))</TestProjectBaseName>
+		<IsTestProject Condition="$([System.String]::new('$(MSBuildProjectDirectory)').ToLower().Contains('\tests\'))">true</IsTestProject>
+		<IsTestProject Condition="$([System.String]::new('$(MSBuildProjectDirectory)').ToLower().Contains('/tests/'))">true</IsTestProject>
+		<TestProjectBaseName Condition="'$(IsTestProject)' == 'true'">$([System.String]::Copy('$(MSBuildProjectName)').Replace('.UnitTests','').Replace('.IntegrationTests','').Replace('.Tests',''))</TestProjectBaseName>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(IsSrcProject)' == 'true'">
@@ -32,13 +34,17 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Authors>Igor Sinicyn</Authors>
 		<Company>CodeMe</Company>
+		<Product>CodeMe</Product>
 		<PackageProjectUrl>https://github.com/ig-sinicyn/CodeMe</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/ig-sinicyn/CodeMe.git</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(IsSrcProject)' == 'true'">
+		<InternalsVisibleTo Include="$(MSBuildProjectName).Tests" />
 		<InternalsVisibleTo Include="$(MSBuildProjectName).UnitTests" />
+		<InternalsVisibleTo Include="$(MSBuildProjectName).IntegrationTests" />
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(IsTestProject)' == 'true'">
@@ -51,7 +57,7 @@
 		<PackageReference Include="AwesomeAssertions" />
 		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
 		<PackageReference Include="xunit.v3.mtp-v2" />
-		<ProjectReference Include="..\..\src\$(TestProjectBaseName)\$(TestProjectBaseName).csproj" />
+		<ProjectReference Include="../../src/$(TestProjectBaseName)/$(TestProjectBaseName).csproj" />
 		<Using Include="AwesomeAssertions" />
 		<Using Include="Xunit" />
 	</ItemGroup>
