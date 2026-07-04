@@ -1,14 +1,17 @@
 name: PR Workflow
 on:
-  pull_request:
-    branches: [ "master" ] # Triggers when you create a PR targeting a master branch
+  pull_request: # Triggers when you create a PR
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: 10.0.x
     - name: Restore dependencies
@@ -18,7 +21,7 @@ jobs:
     - name: Run Tests
       run:  dotnet test --report-trx --results-directory=".artifacts/test-results" --no-build --no-restore || true
     - name: Publish Test Report
-      uses: dorny/test-reporter@v1
+      uses: dorny/test-reporter@v3
       if:   always()
       with:
         name: .NET Core Tests
