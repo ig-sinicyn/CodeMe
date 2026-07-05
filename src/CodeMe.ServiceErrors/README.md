@@ -2,7 +2,7 @@
 
 CodeMe.ServiceErrors is a library for describing service-level errors as first-class values and turning them into serializable payloads or exceptions. It is designed for APIs, background services, and distributed systems where you want a stable error contract across app boundaries.
 
-### Minimal example
+## Minimal example
 
 Handling the errors:
 ```csharp
@@ -81,3 +81,7 @@ internal sealed class OrderNotFoundException : ServiceException
     }
 }
 ```
+
+# Documentation
+
+Check [documentation](https://github.com/ig-sinicyn/CodeMe) for more details and examples.

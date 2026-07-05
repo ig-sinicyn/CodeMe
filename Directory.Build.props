@@ -41,12 +41,14 @@
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(IsSrcProject)' == 'true'">
 		<InternalsVisibleTo Include="$(MSBuildProjectName).Tests" />
 		<InternalsVisibleTo Include="$(MSBuildProjectName).UnitTests" />
 		<InternalsVisibleTo Include="$(MSBuildProjectName).IntegrationTests" />
+		<None Include="README.md" Pack="true" PackagePath="/" />
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(IsTestProject)' == 'true'">
