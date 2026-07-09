@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/docs/">
+    <Project Path="docs/docs.csproj" />
+  </Folder>
   <Folder Name="/env/">
     <Project Path="cicd/cicd.csproj" />
     <Project Path="env/env.csproj" />
@@ -9,6 +12,7 @@
     <Project Path="src/CodeMe.ServiceErrors/CodeMe.ServiceErrors.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/CodeMe.Basics.UnitTests/CodeMe.Basics.UnitTests.csproj" />
     <Project Path="tests/CodeMe.ServiceErrors.Abstractions.UnitTests/CodeMe.ServiceErrors.Abstractions.UnitTests.csproj" Id="e5bd77fa-a78a-4e30-a69b-1d03531274dd" />
     <Project Path="tests/CodeMe.ServiceErrors.UnitTests/CodeMe.ServiceErrors.UnitTests.csproj" />
   </Folder>

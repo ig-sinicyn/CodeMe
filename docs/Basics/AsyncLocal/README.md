@@ -1,6 +1,3 @@
-# CodeMe.Basics
-
-CodeMe.Basics is a library for simple reusable infrastructure types that are missing in BCL.
 
 # ScopedAsyncLocal<T>
 
@@ -81,7 +78,3 @@ The constructor can be used with `validateDisposeOrder: true` to detect out-of-o
                 }
             });
 ```
-
-# Documentation
-
-Check [documentation](https://github.com/ig-sinicyn/CodeMe/docs/Basics/README.md) for more details and examples.

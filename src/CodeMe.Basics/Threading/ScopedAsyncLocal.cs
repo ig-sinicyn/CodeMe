@@ -1,55 +1,65 @@
 ﻿using System.Collections.Immutable;
+using System.ComponentModel;
 
 namespace CodeMe.Basics.Threading;
 
 /// <summary>
-/// Basic building block for ambient contexts. Based on <see cref="AsyncLocal{T}"/>.
+/// Provides an ambient context for a logical execution flow.
 /// </summary>
 /// <typeparam name="T">The type of the ambient data.</typeparam>
 public sealed class ScopedAsyncLocal<T>
     where T : class
 {
     /// <summary>
-    /// Async local scope lifetime.
-    /// The caller MUST call <see cref="Scope.Dispose"/> or there may be a memory leak.
+    /// Ambient scope instance with partial initialization support.
+    /// Please DO NOT capture the instance and use <see cref="ScopedAsyncLocal{T}.Current"/> instead.
     /// </summary>
-    internal sealed class Scope : IDisposable
+    public sealed class Scope : IDisposable
     {
         private readonly ScopedAsyncLocal<T> _owner;
-
         private T? _value;
 
-        public Scope(ScopedAsyncLocal<T> owner)
+        internal Scope(ScopedAsyncLocal<T> owner)
         {
             _owner = owner;
         }
 
-        public Scope(ScopedAsyncLocal<T> owner, T? value)
+        internal Scope(ScopedAsyncLocal<T> owner, T? value)
             : this(owner)
         {
             _value = value;
             IsInitialized = true;
         }
 
+        /// <summary>
+        /// <c>True</c> if the scope was initialized.
+        /// </summary>
         public bool IsInitialized { get; private set; }
 
-        public bool IsDisposed { get; private set; }
+        internal bool IsDisposed { get; private set; }
 
+        /// <summary>
+        /// Value for the initialized scope.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Scope was disposed.</exception>
+        /// <exception cref="InvalidOperationException">Scope was not initialized.</exception>
         public T? Value
         {
             get
             {
                 ObjectDisposedException.ThrowIf(IsDisposed, GetType());
 
-                if (!IsInitialized)
-                {
-                    throw new InvalidOperationException("The scope value is not initialized.");
-                }
-
-                return _value;
+                return IsInitialized
+                    ? _value
+                    : throw new InvalidOperationException("The scope value is not initialized.");
             }
         }
 
+        /// <summary>
+        /// Initializes the scope with specified value.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Scope was disposed.</exception>
+        /// <exception cref="InvalidOperationException">Scope was already initialized.</exception>
         public void Initialize(T? value)
         {
             ObjectDisposedException.ThrowIf(IsDisposed, GetType());
@@ -63,6 +73,7 @@ public sealed class ScopedAsyncLocal<T>
             IsInitialized = true;
         }
 
+        /// <inheritdoc/>
         public void Dispose()
         {
             if (!IsDisposed)
@@ -76,25 +87,17 @@ public sealed class ScopedAsyncLocal<T>
         }
     }
 
-    /// <summary>
-    /// Design decisions:
-    /// 1. We do support asynchronous initialization.
-    /// 2. On initialization there is no way to update AsyncLocal's value
-    /// for the calling method after first await
-    /// as the continuation is being run using a copy of parent execution context.
-    /// So, we have to store AsyncLocal's value before initialization.
-    /// 3. We cannot revert store operation for the parent context so there may be cases
-    /// when we leave parent context AsyncLocal's value in non-initialized state.
-    /// 4. It seems the only viable option is to store stack of scopes,
-    /// to perform cleanup in begin / end scope methods
-    /// and to take first initialized scope in the Current accessor.
-    /// </summary>
+    // A stack of scopes is kept to support nested scopes and to restore the previous ambient value when a scope
+    // is disposed.
+    //
+    // Scopes are initialized in two steps because the value of the async-local context must be set before any async
+    // calls are executed. Otherwise, an update performed after the first await would not be propagated back to the
+    // caller, because the continuation would run with a copy of the parent execution context.
     private readonly AsyncLocal<ImmutableStack<Scope>> _current;
-
     private readonly bool _validateDisposeOrder;
 
     /// <summary>
-    /// Creates ambient context
+    /// Creates ambient context.
     /// </summary>
     /// <param name="validateDisposeOrder">Fail for out-of-order scope dispose.</param>
     public ScopedAsyncLocal(bool validateDisposeOrder = false)
@@ -103,14 +106,6 @@ public sealed class ScopedAsyncLocal<T>
         _validateDisposeOrder = validateDisposeOrder;
     }
 
-    /// <summary>
-    /// The current ambient value.
-    /// </summary>
-    public T? Current => CurrentScope?.Value;
-
-    /// <summary>
-    /// The current ambient scope.
-    /// </summary>
     private Scope? CurrentScope
     {
         // Returns first initialized scope value or default.
@@ -135,6 +130,41 @@ public sealed class ScopedAsyncLocal<T>
     }
 
     /// <summary>
+    /// The current ambient value.
+    /// </summary>
+    public T? Current => CurrentScope?.Value;
+
+    /// <summary>
+    /// Starts a new scope with uninitialized value.
+    /// The caller MUST call <see cref="Scope.Initialize"/> to set the value
+    /// and <see cref="Scope.Dispose"/> on the end of scope lifetime or there may be a memory leak.
+    /// This method cannot be called from async method because the scope value will not be propagated back to the caller.
+    /// Instead, call it from synchronous part, and return task of completion part;
+    /// </summary>
+    /// <example>
+    /// ValueTask&lt;IDisposable&gt; BeginCustomScopeAsync()\
+    /// {
+    /// var scope = _scopedAsyncLocal.BeginScopeInitialization();
+    /// return CompleteCustomScopeAsync(scope);
+    /// }
+    /// async ValueTask&lt;IDisposable&gt; CompleteCustomScopeAsync(ScopedAsyncLocal&lt;string&gt;.Scope scope)
+    /// {
+    /// var resource = await GetResourceAsync();
+    /// scope.Initialize(resource);
+    /// return scope;
+    /// }
+    /// </example>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    public Scope BeginScopeInitialization()
+    {
+        var newScope = new Scope(this);
+
+        PushScope(newScope);
+
+        return newScope;
+    }
+
+    /// <summary>
     /// Begins a new scope with new ambient value.
     /// The caller MUST call <see cref="Scope.Dispose"/> or there may be a memory leak.
     /// </summary>
@@ -151,39 +181,40 @@ public sealed class ScopedAsyncLocal<T>
 
     /// <summary>
     /// Begins a new scope with new ambient value.
-    /// The caller MUST call <see cref="Scope.Dispose"/> or there may be a memory leak.
+    /// IMPORTANT: If the method is called from helper method,
+    /// the helper should be synchronous and SHOULD NOT contain awaits.
+    /// Otherwise, updated scope value will not be propagated back to the caller of the helper method.
+    /// The caller MUST call <see cref="Scope.Dispose"/> on the end of scope lifetime or there may be a memory leak.
     /// </summary>
     /// <param name="valueFactory">
     /// Async factory for the new scope ambient value. Value will be replaced with previous one on
     /// scope disposal.
     /// </param>
     /// <returns><see cref="IDisposable"/> to restore the parent scope.</returns>
-    public async Task<IDisposable> BeginScopeAsync(Func<ValueTask<T>> valueFactory)
+    public Task<IDisposable> BeginScopeAsync(Func<ValueTask<T?>> valueFactory)
     {
-        var newScope = new Scope(this);
+        ArgumentNullException.ThrowIfNull(valueFactory);
 
-        PushScope(newScope);
+        var newScope = BeginScopeInitialization();
+        return CompleteScopeAsync(newScope, valueFactory);
+    }
 
+    private async Task<IDisposable> CompleteScopeAsync(
+        Scope newScope,
+        Func<ValueTask<T?>> valueFactory)
+    {
         try
         {
             var value = await valueFactory();
             newScope.Initialize(value);
+
+            return newScope;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             newScope.Dispose();
             throw;
         }
-
-        return newScope;
-    }
-
-    private void PushScope(Scope newScope)
-    {
-        PopDisposedScopes();
-        _current.Value = _current.Value is { } stack
-            ? stack.Push(newScope)
-            : [newScope];
     }
 
     private void AssertIsCurrentScope(Scope expected)
@@ -195,20 +226,30 @@ public sealed class ScopedAsyncLocal<T>
         }
     }
 
+    private void PushScope(Scope newScope)
+    {
+        var stack = _current.Value;
+        _current.Value = stack == null ? [newScope] : PopDisposedScopes(stack).Push(newScope);
+    }
+
     private void PopDisposedScopes()
     {
-        // Check the comment of the _current field for the justification.
-        if (_current.Value is not { } stack)
+        if (_current.Value is { } stack)
         {
-            return;
+            stack = PopDisposedScopes(stack);
+            _current.Value = stack.IsEmpty ? null! : stack;
+        }
+    }
+
+    private ImmutableStack<Scope> PopDisposedScopes(ImmutableStack<Scope> current)
+    {
+        var newStack = current;
+
+        while (!newStack.IsEmpty && newStack.Peek().IsDisposed)
+        {
+            newStack = newStack.Pop();
         }
 
-        var originalStack = stack;
-        while (!stack.IsEmpty && stack.Peek().IsDisposed) stack = stack.Pop();
-
-        if (!ReferenceEquals(stack, originalStack))
-        {
-            _current.Value = stack;
-        }
+        return newStack;
     }
 }

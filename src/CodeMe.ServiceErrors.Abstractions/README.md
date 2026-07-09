@@ -25,4 +25,4 @@ if (error.Matches(descriptor))
 
 # Documentation
 
-Check [documentation](https://github.com/ig-sinicyn/CodeMe) for more details and examples.
+Check [documentation](https://github.com/ig-sinicyn/CodeMe/docs/ServiceErrors/README.md) for more details and examples.

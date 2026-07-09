@@ -5,6 +5,7 @@ csharp_style_prefer_primary_constructors = false
 resharper_align_multiline_binary_expressions_chain = false
 resharper_braces_for_foreach = required
 resharper_braces_for_ifelse = required
+resharper_braces_for_while = required
 resharper_csharp_keep_blank_lines_in_code = 1
 resharper_csharp_keep_blank_lines_in_declarations = 1
 resharper_csharp_wrap_before_binary_opsign = true
