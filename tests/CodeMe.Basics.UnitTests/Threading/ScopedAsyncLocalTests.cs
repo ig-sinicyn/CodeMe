@@ -1,6 +1,6 @@
 ﻿using CodeMe.Basics.Threading;
 
-namespace CodeMe.Basics.UnitTests;
+namespace CodeMe.Basics.UnitTests.Threading;
 
 public class ScopedAsyncLocalTests
 {
@@ -67,6 +67,7 @@ public class ScopedAsyncLocalTests
         scope.IsInitialized.Should().BeTrue();
         scope.Value.Should().Be("Hello!");
         scope.IsDisposed.Should().BeFalse();
+        Assert.Throws<InvalidOperationException>(() => scope.Initialize("Hello!"));
     }
 
     [Fact]
@@ -85,6 +86,7 @@ public class ScopedAsyncLocalTests
         scope.IsInitialized.Should().BeFalse();
         Assert.Throws<ObjectDisposedException>(() => scope.Value);
         scope.IsDisposed.Should().BeTrue();
+        Assert.Throws<ObjectDisposedException>(() => scope.Initialize("Hello!"));
     }
 
     [Fact]
@@ -171,7 +173,7 @@ public class ScopedAsyncLocalTests
     }
 
     [Fact]
-    public async Task Scope_ShouldNotBackpropagate()
+    public async Task Scope_DoesNotReturnFromAsyncCall()
     {
         // Arrange
         var local = new ScopedAsyncLocal<string>();
@@ -186,7 +188,8 @@ public class ScopedAsyncLocalTests
                 await Task.Delay(1);
                 inScope = local.Current;
                 return result;
-            });
+            },
+            TestContext.Current.CancellationToken);
 
         var after = local.Current;
         scope.Dispose();
@@ -194,6 +197,31 @@ public class ScopedAsyncLocalTests
         // Assert
         before.Should().BeNull();
         inScope.Should().Be("Hello!");
+        after.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ScopeDispose_AppliedFromAsyncCall()
+    {
+        // Arrange
+        var local = new ScopedAsyncLocal<string>();
+
+        // Act
+
+        var scope = local.BeginScope("Hello!");
+        var before = local.Current;
+        await Task.Run(
+            async () =>
+            {
+                await Task.Delay(1);
+                scope.Dispose();
+            },
+            TestContext.Current.CancellationToken);
+
+        var after = local.Current;
+
+        // Assert
+        before.Should().Be("Hello!");
         after.Should().BeNull();
     }
 
@@ -254,11 +282,12 @@ public class ScopedAsyncLocalTests
                 var result = local.BeginScope("Hello!");
                 await Task.Delay(1);
                 return result;
-            });
+            },
+            TestContext.Current.CancellationToken);
         Assert.Throws<InvalidOperationException>(() => scope.Dispose());
     }
 
-    private Task<IDisposable> BeginScopeAsync(ScopedAsyncLocal<string> local, string value) =>
+    private static Task<IDisposable> BeginScopeAsync(ScopedAsyncLocal<string> local, string value) =>
         local.BeginScopeAsync(
             async () =>
             {

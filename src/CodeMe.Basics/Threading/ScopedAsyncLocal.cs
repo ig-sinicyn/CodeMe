@@ -11,125 +11,9 @@ namespace CodeMe.Basics.Threading;
 /// Please check documentation for using scopes together with async initialization and disposal.
 /// </summary>
 /// <typeparam name="T">The type of the ambient data.</typeparam>
-public sealed class ScopedAsyncLocal<T>
+public sealed partial class ScopedAsyncLocal<T>
     where T : class
 {
-    /// <summary>
-    /// Ambient scope instance with partial initialization support.
-    /// You SHOULD call <see cref="Scope.Dispose"/> on the end of scope lifetime or there may be memory leaks.
-    /// It is especially important if you are using scopes inside a loop or recursive calls
-    /// as you may end with a very long stack of non-disposed scopes.
-    /// <para>
-    /// If you store scope in wrapper, it is recommended to dispose the scope synchronously.
-    /// This minor optimization will remove reference to the disposed scope from calling execution context.
-    /// </para>
-    /// <example>
-    /// A proper implementation that will clear caller's execution context reference to the disposed scope:
-    /// <code>
-    ///     ValueTask DisposeAsync()
-    ///     {
-    ///         _scope.Dispose();
-    ///         return CompleteDisposeAsync();
-    ///     }
-    /// 
-    ///     async ValueTask CompleteDisposeAsync() { ... }
-    ///     </code>
-    /// </example>
-    /// </summary>
-    public sealed class Scope : IDisposable
-    {
-        private readonly ScopedAsyncLocal<T> _owner;
-        private T? _value;
-
-        internal Scope(ScopedAsyncLocal<T> owner)
-        {
-            _owner = owner;
-        }
-
-        internal Scope(ScopedAsyncLocal<T> owner, T? value)
-            : this(owner)
-        {
-            _value = value;
-            IsInitialized = true;
-        }
-
-        /// <summary>
-        /// <c>True</c> if the scope was initialized.
-        /// </summary>
-        public bool IsInitialized { get; private set; }
-
-        internal bool IsDisposed { get; private set; }
-
-        /// <summary>
-        /// Value for the initialized scope.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">Scope was not initialized.</exception>
-        /// <exception cref="ObjectDisposedException">Scope was disposed.</exception>
-        public T? Value
-        {
-            get
-            {
-                ObjectDisposedException.ThrowIf(IsDisposed, GetType());
-
-                return IsInitialized
-                    ? _value
-                    : throw new InvalidOperationException("The scope value is not initialized.");
-            }
-        }
-
-        /// <summary>
-        /// Initializes the scope with specified value.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">Scope was already initialized.</exception>
-        /// <exception cref="ObjectDisposedException">Scope was disposed.</exception>
-        public void Initialize(T? value)
-        {
-            ObjectDisposedException.ThrowIf(IsDisposed, GetType());
-
-            if (IsInitialized)
-            {
-                throw new InvalidOperationException("The scope value is already initialized.");
-            }
-
-            _value = value;
-            IsInitialized = true;
-        }
-
-        /// <summary>
-        /// Closes current scope and restores previous one.
-        /// You SHOULD call <see cref="Scope.Dispose"/> on the end of scope lifetime or there may be memory leaks.
-        /// It is especially important if you are using scopes inside a loop or recursive calls
-        /// as you may end with a very long stack of non-disposed scopes.
-        /// <para>
-        /// If you store scope in wrapper, it is recommended to dispose the scope synchronously.
-        /// This minor optimization will remove reference to the disposed scope from calling execution context.
-        /// </para>
-        /// <example>
-        /// A proper implementation that will clear caller's execution context reference to the disposed scope:
-        /// <code>
-        ///     ValueTask DisposeAsync()
-        ///     {
-        ///         _scope.Dispose();
-        ///         return CompleteDisposeAsync();
-        ///     }
-        /// 
-        ///     async ValueTask CompleteDisposeAsync() { ... }
-        ///     </code>
-        /// </example>
-        /// </summary>
-        public void Dispose()
-        {
-            if (!IsDisposed)
-            {
-                _owner.AssertIsCurrentScope(this);
-                _value = null;
-                IsInitialized = false;
-                IsDisposed = true;
-                _owner.PopDisposedScopes();
-            }
-        }
-    }
-
     // A stack of scopes is kept to support partial initialization
     // and to restore the previous ambient value when a scope is disposed.
     //
@@ -285,7 +169,7 @@ public sealed class ScopedAsyncLocal<T>
         return CompleteScopeAsync(newScope, valueFactory);
     }
 
-    private async Task<IDisposable> CompleteScopeAsync(
+    private static async Task<IDisposable> CompleteScopeAsync(
         Scope newScope,
         Func<ValueTask<T?>> valueFactory)
     {
@@ -339,5 +223,121 @@ public sealed class ScopedAsyncLocal<T>
         }
 
         return newStack;
+    }
+
+    /// <summary>
+    /// Ambient scope instance with partial initialization support.
+    /// You SHOULD call <see cref="Scope.Dispose"/> on the end of scope lifetime or there may be memory leaks.
+    /// It is especially important if you are using scopes inside a loop or recursive calls
+    /// as you may end with a very long stack of non-disposed scopes.
+    /// <para>
+    /// If you store scope in wrapper, it is recommended to dispose the scope synchronously.
+    /// This minor optimization will remove reference to the disposed scope from calling execution context.
+    /// </para>
+    /// <example>
+    /// A proper implementation that will clear caller's execution context reference to the disposed scope:
+    /// <code>
+    ///     ValueTask DisposeAsync()
+    ///     {
+    ///         _scope.Dispose();
+    ///         return CompleteDisposeAsync();
+    ///     }
+    /// 
+    ///     async ValueTask CompleteDisposeAsync() { ... }
+    ///     </code>
+    /// </example>
+    /// </summary>
+    public sealed class Scope : IDisposable
+    {
+        private readonly ScopedAsyncLocal<T> _owner;
+        private T? _value;
+
+        internal Scope(ScopedAsyncLocal<T> owner)
+        {
+            _owner = owner;
+        }
+
+        internal Scope(ScopedAsyncLocal<T> owner, T? value)
+            : this(owner)
+        {
+            _value = value;
+            IsInitialized = true;
+        }
+
+        /// <summary>
+        /// <c>True</c> if the scope was initialized.
+        /// </summary>
+        public bool IsInitialized { get; private set; }
+
+        internal bool IsDisposed { get; private set; }
+
+        /// <summary>
+        /// Value for the initialized scope.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Scope was not initialized.</exception>
+        /// <exception cref="ObjectDisposedException">Scope was disposed.</exception>
+        public T? Value
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(IsDisposed, GetType());
+
+                return IsInitialized
+                    ? _value
+                    : throw new InvalidOperationException("The scope value is not initialized.");
+            }
+        }
+
+        /// <summary>
+        /// Initializes the scope with specified value.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Scope was already initialized.</exception>
+        /// <exception cref="ObjectDisposedException">Scope was disposed.</exception>
+        public void Initialize(T? value)
+        {
+            ObjectDisposedException.ThrowIf(IsDisposed, GetType());
+
+            if (IsInitialized)
+            {
+                throw new InvalidOperationException("The scope value is already initialized.");
+            }
+
+            _value = value;
+            IsInitialized = true;
+        }
+
+        /// <summary>
+        /// Closes current scope and restores previous one.
+        /// You SHOULD call <see cref="Scope.Dispose"/> on the end of scope lifetime or there may be memory leaks.
+        /// It is especially important if you are using scopes inside a loop or recursive calls
+        /// as you may end with a very long stack of non-disposed scopes.
+        /// <para>
+        /// If you store scope in wrapper, it is recommended to dispose the scope synchronously.
+        /// This minor optimization will remove reference to the disposed scope from calling execution context.
+        /// </para>
+        /// <example>
+        /// A proper implementation that will clear caller's execution context reference to the disposed scope:
+        /// <code>
+        ///     ValueTask DisposeAsync()
+        ///     {
+        ///         _scope.Dispose();
+        ///         return CompleteDisposeAsync();
+        ///     }
+        /// 
+        ///     async ValueTask CompleteDisposeAsync() { ... }
+        ///     </code>
+        /// </example>
+        /// </summary>
+        public void Dispose()
+        {
+            if (!IsDisposed)
+            {
+                _owner.AssertIsCurrentScope(this);
+                _value = null;
+                IsInitialized = false;
+                IsDisposed = true;
+                _owner.PopDisposedScopes();
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿[*.cs]
 csharp_style_prefer_primary_constructors = false
+dotnet_style_prefer_collection_expression = false
 
 # ReSharper properties
 resharper_align_multiline_binary_expressions_chain = false

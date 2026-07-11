@@ -1,55 +1,9 @@
 ﻿using CodeMe.Basics.Threading;
 
-namespace CodeMe.Basics.UnitTests;
+namespace CodeMe.Basics.UnitTests.Threading;
 
 public class CustomAsyncLocalScopeTests
 {
-    public sealed class ResourceScope : IAsyncDisposable
-    {
-        internal IDisposable? Scope { get; set; }
-
-        public string Value { get; set; } = null!;
-
-        public ValueTask DisposeAsync()
-        {
-            Scope?.Dispose();
-            return DisposeCoreAsync();
-        }
-
-        private async ValueTask DisposeCoreAsync()
-        {
-            await Task.Delay(1);
-            Value = null!;
-        }
-    }
-
-    public sealed class ResourceManager
-    {
-        private readonly ScopedAsyncLocal<ResourceScope> _context = new(validateDisposeOrder: true);
-
-        public ResourceScope? Current => _context.Current;
-
-        public ValueTask<ResourceScope> BeginScopeAsync(string value)
-        {
-            var scope = _context.BeginScopeInitialization();
-            return BeginScopeAsyncCore(scope, value);
-        }
-
-        private async ValueTask<ResourceScope> BeginScopeAsyncCore(
-            ScopedAsyncLocal<ResourceScope>.Scope scope,
-            string value)
-        {
-            await Task.Delay(1);
-            var result = new ResourceScope
-            {
-                Scope = scope,
-                Value = value
-            };
-            scope.Initialize(result);
-            return result;
-        }
-    }
-
     [Fact]
     public void EmptyScope_ShouldBeNull()
     {
@@ -80,5 +34,51 @@ public class CustomAsyncLocalScopeTests
         before.Should().BeNull();
         inScope.Should().Be("Hello!");
         after.Should().BeNull();
+    }
+
+    private sealed class ResourceScope : IAsyncDisposable
+    {
+        internal IDisposable? Scope { get; set; }
+
+        public string Value { get; set; } = null!;
+
+        public ValueTask DisposeAsync()
+        {
+            Scope?.Dispose();
+            return DisposeCoreAsync();
+        }
+
+        private async ValueTask DisposeCoreAsync()
+        {
+            await Task.Delay(1);
+            Value = null!;
+        }
+    }
+
+    private sealed class ResourceManager
+    {
+        private readonly ScopedAsyncLocal<ResourceScope> _context = new(validateDisposeOrder: true);
+
+        public ResourceScope? Current => _context.Current;
+
+        public ValueTask<ResourceScope> BeginScopeAsync(string value)
+        {
+            var scope = _context.BeginScopeInitialization();
+            return BeginScopeAsyncCore(scope, value);
+        }
+
+        private static async ValueTask<ResourceScope> BeginScopeAsyncCore(
+            ScopedAsyncLocal<ResourceScope>.Scope scope,
+            string value)
+        {
+            await Task.Delay(1);
+            var result = new ResourceScope
+            {
+                Scope = scope,
+                Value = value
+            };
+            scope.Initialize(result);
+            return result;
+        }
     }
 }
