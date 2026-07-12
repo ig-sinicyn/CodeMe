@@ -8,6 +8,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/CodeMe.Basics/CodeMe.Basics.csproj" Id="94f870ce-be26-47a9-a689-260ae5991902" />
+    <Project Path="src/CodeMe.Data.UnitOfWork/CodeMe.Data.UnitOfWork.csproj" />
     <Project Path="src/CodeMe.ServiceErrors.Abstractions/CodeMe.ServiceErrors.Abstractions.csproj" Id="e04b04e8-ff7b-47e4-89e2-b9c87295c0c2" />
     <Project Path="src/CodeMe.ServiceErrors/CodeMe.ServiceErrors.csproj" />
   </Folder>
