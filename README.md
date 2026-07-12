@@ -1,83 +1,54 @@
-# CodeMe
 
-CodeMe is a set of small, focused, reusable libraries aimed to reduce amount of boring boilerplate code in .NET applications. 
+# What is included?
 
-# CodeMe.ServiceErrors
-
-CodeMe.ServiceErrors is a library for describing service-level errors as first-class values and turning them into serializable payloads or exceptions. It is designed for APIs, background services, and distributed systems where you want a stable error contract across app boundaries. Check [documentation](https://github.com/ig-sinicyn/CodeMe/docs/ServiceErrors/README.md) for more details and examples.
-
-## Minimal example
-
-Well-known errors, testing for errors, conversions and DI registration:
-```csharp
-using CodeMe.ServiceErrors;
-using CodeMe.ServiceErrors.DependencyInjection;
-using CodeMe.ServiceErrors.Serializable;
-using Microsoft.Extensions.DependencyInjection;
-using static WellKnownOrderApiErrors;
-
-// DI registration
-var services = new ServiceCollection();
-services
-    .AddServiceErrors(RootGroup)
-    .Add(typeof(WellKnownOrderApiErrors));
-using var provider = services.BuildServiceProvider();
-var errorFactory = provider.GetRequiredService<IServiceErrorFactory>();
-
-// Error return and handling
-var error = new ServiceError(OrderNotFound, "Order 42 was not found");
-// ...
-if (error.Matches(OrderNotFound))
-{
-    // handle the error
-}
-
-// Error serialization and exception factory
-ServiceError error = new ServiceError(OrderNotFound, "Order 42 was not found");
-ServiceErrorDto dto = errorFactory.CreateDto(error);
-ServiceError errorFromDto = errorFactory.CreateError(dto);
-// DTO content in JSON format:
-// {
-//   "scheme": "problem",
-//   "application": "orders-api",
-//   "category": "orders",
-//   "code": "order-not-found",
-//   "statusCode": "NotFound",
-//   "message": "Order 42 was not found"
-// }
-
-// returns OrderNotFoundException
-IServiceException exception = errorFactory.CreateException(errorFromDto);
-ServiceError errorFromException = exception.Error;
-
-// Well-known errors declaration
-[ServiceErrors]
-internal static class WellKnownOrderApiErrors
-{
-    public static readonly ErrorGroupUri RootGroup = ErrorGroupUri.Create("problem", "orders-api");
-
-    public static readonly ErrorGroupUri OrdersGroup = RootGroup.SubGroup("orders");
-
-    [ServiceException<OrderNotFoundException>]
-    public static readonly ErrorDescriptor OrderNotFound =
-        ErrorDescriptor.NotFound(OrdersGroup, "order-not-found");
-}
-
-// Typed exceptions
-internal sealed class OrderNotFoundException : ServiceException
-{
-    public OrderNotFoundException(ServiceError error) 
-        : base(AssertMatches(OrderNotFound, error))
-    {
-    }
-
-    public OrderNotFoundException(string message, Exception? innerException = null) 
-        : base(OrderNotFound, message, innerException)
-    {
-    }
-}
-```
+- CodeMe.ServiceErrors — describe service-level errors as first-class values, carry them as `ServiceError`, serialize them to DTOs, and map them to typed exceptions. See the [full documentation](docs/ServiceErrors/README.md).
+- CodeMe.Basics — small infrastructure helpers such as `ScopedAsyncLocal<T>` for ambient execution context and logical scopes. See the [full documentation](docs/Basics/AsyncLocal/README.md).
 
 # CodeMe.Basics
 
-CodeMe.Basics contains BCL-style extensions such as `ScopedAsyncLocal<T>` and others.
+CodeMe.Basics provides small, reusable infrastructure types that complement the BCL.
+
+## ScopedAsyncLocal<T>
+
+`ScopedAsyncLocal<T>` lets you carry ambient context through a logical execution flow without explicitly passing it through every method call. Use `ScopedAsyncLocal<T>` for values such as request IDs, unit-of-work state, or tenant information. The value is automatically restored when the scope is disposed.
+
+```csharp
+using CodeMe.Threading;
+
+var context = new ScopedAsyncLocal<string>();
+
+using (context.BeginScope("request-1"))
+{
+	Console.WriteLine(context.Current); // request-1
+}
+
+Console.WriteLine(context.Current); // null
+```
+
+`ScopedAsyncLocal<T>` also supports asynchronous flows and nested scopes. For more details and additional examples, see the [full documentation](docs/Basics/AsyncLocal/README.md).
+
+# CodeMe.ServiceErrors
+
+CodeMe.ServiceErrors helps you describe service-level errors as first-class values and propagate them consistently across application boundaries.
+
+The package is designed for APIs, background services, and distributed systems where a stable error contract matters. It lets you:
+
+- define well-known error descriptors with stable URIs and semantics;
+- carry errors as `ServiceError` values in your domain code;
+- serialize them to `ServiceErrorDto` payloads;
+- map them to typed exceptions when needed;
+- register error definitions in DI for consistent creation and hydration.
+
+A simple example:
+
+```csharp
+using CodeMe.ServiceErrors;
+
+var descriptor = ErrorDescriptor.NotFound(
+	ErrorGroupUri.Create("problem", "orders-api", "orders"),
+	"order-not-found");
+
+var error = new ServiceError(descriptor, "Order 42 was not found");
+```
+
+For more details, examples, and guidance on DI registration, serialization, and exception mapping, see the [full documentation](docs/ServiceErrors/README.md).

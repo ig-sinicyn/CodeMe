@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.ComponentModel;
 
-namespace CodeMe.Basics.Threading;
+namespace CodeMe.Threading;
 
 /// <summary>
 /// Provides an ambient context for a logical execution flow.
@@ -161,7 +161,7 @@ public sealed partial class ScopedAsyncLocal<T>
     /// Async factory for the new scope ambient value. Value will be replaced with previous one on scope disposal.
     /// </param>
     /// <returns><see cref="IDisposable"/> to restore the parent scope.</returns>
-    public Task<IDisposable> BeginScopeAsync(Func<ValueTask<T?>> valueFactory)
+    public ValueTask<IDisposable> BeginScopeAsync(Func<ValueTask<T?>> valueFactory)
     {
         ArgumentNullException.ThrowIfNull(valueFactory);
 
@@ -169,7 +169,7 @@ public sealed partial class ScopedAsyncLocal<T>
         return CompleteScopeAsync(newScope, valueFactory);
     }
 
-    private static async Task<IDisposable> CompleteScopeAsync(
+    private static async ValueTask<IDisposable> CompleteScopeAsync(
         Scope newScope,
         Func<ValueTask<T?>> valueFactory)
     {
