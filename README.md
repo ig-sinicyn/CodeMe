@@ -4,8 +4,11 @@ CodeMe is a set of small, focused, reusable libraries aimed to reduce amount of 
 
 # CodeMe.ServiceErrors
 
-CodeMe.ServiceErrors is a library for describing service-level errors as first-class values and turning them into serializable payloads or exceptions. It is designed for APIs, background services, and distributed systems where you want a stable error contract across app boundaries.
+CodeMe.ServiceErrors is a library for describing service-level errors as first-class values and turning them into serializable payloads or exceptions. It is designed for APIs, background services, and distributed systems where you want a stable error contract across app boundaries. Check [documentation](https://github.com/ig-sinicyn/CodeMe/docs/ServiceErrors/README.md) for more details and examples.
 
+## Minimal example
+
+Well-known errors, testing for errors, conversions and DI registration:
 ```csharp
 using CodeMe.ServiceErrors;
 using CodeMe.ServiceErrors.DependencyInjection;
@@ -13,14 +16,23 @@ using CodeMe.ServiceErrors.Serializable;
 using Microsoft.Extensions.DependencyInjection;
 using static WellKnownOrderApiErrors;
 
+// DI registration
 var services = new ServiceCollection();
 services
     .AddServiceErrors(RootGroup)
     .Add(typeof(WellKnownOrderApiErrors));
-
 using var provider = services.BuildServiceProvider();
 var errorFactory = provider.GetRequiredService<IServiceErrorFactory>();
 
+// Error return and handling
+var error = new ServiceError(OrderNotFound, "Order 42 was not found");
+// ...
+if (error.Matches(OrderNotFound))
+{
+    // handle the error
+}
+
+// Error serialization and exception factory
 ServiceError error = new ServiceError(OrderNotFound, "Order 42 was not found");
 ServiceErrorDto dto = errorFactory.CreateDto(error);
 ServiceError errorFromDto = errorFactory.CreateError(dto);
@@ -38,6 +50,7 @@ ServiceError errorFromDto = errorFactory.CreateError(dto);
 IServiceException exception = errorFactory.CreateException(errorFromDto);
 ServiceError errorFromException = exception.Error;
 
+// Well-known errors declaration
 [ServiceErrors]
 internal static class WellKnownOrderApiErrors
 {
@@ -50,6 +63,7 @@ internal static class WellKnownOrderApiErrors
         ErrorDescriptor.NotFound(OrdersGroup, "order-not-found");
 }
 
+// Typed exceptions
 internal sealed class OrderNotFoundException : ServiceException
 {
     public OrderNotFoundException(ServiceError error) 

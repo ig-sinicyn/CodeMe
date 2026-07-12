@@ -3,6 +3,19 @@
 
 `ScopedAsyncLocal<T>` provides ambient context for a logical execution flow. It is useful when a value should be available to all code in the current flow without explicitly passing it through every method call. Typical scenarios include unit of work scopes, request correlation identifiers, tenant information, etc.
 
+## How it works
+
+`ScopedAsyncLocal<T>` provides ambient context by keeping a stack of scopes for the current execution flow. Each scope represents a logical boundary such as a request, unit-of-work, or tenant context. When you call `BeginScope` or `BeginScopeAsync`, a new scope is pushed onto the current execution context, and `Current` resolves to the value from the innermost initialized scope.
+
+Nested scopes override the parent value while they are active. When the child scope is disposed, the previous ambient value is restored automatically, so the value behaves like a flow-scoped context without having to pass it through every method call.
+
+The implementation uses `AsyncLocal<T>` under the hood, which means the value is captured per async flow. Because async calls create copies of the execution context, initialization is split into two steps:
+
+- the scope is created synchronously so it can be observed immediately by the caller;
+- the scope value is initialized later, and uninitialized scopes are ignored while resolving `Current`.
+
+This design lets the new scope be available to the caller right away, while still supporting asynchronous value factories. The library also keeps a stack of scopes so it can restore the previous value when a scope is disposed. If you forget to dispose scopes, the stack can grow and hold references longer than intended. When `validateDisposeOrder: true` is used, disposing scopes in the wrong order throws an exception.
+
 ## Scenarios and example of usage
 
 Use `ScopedAsyncLocal<T>` when a value should be available to the current logical execution path and reverted automatically when the scope ends. The value is visible to nested scopes and is restored to the previous ambient value when the scope is disposed.

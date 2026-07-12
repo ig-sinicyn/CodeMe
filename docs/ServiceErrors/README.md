@@ -1,7 +1,3 @@
-# CodeMe
-
-CodeMe is a set of small, focused, reusable libraries aimed to reduce amount of boring boilerplate code in .NET applications. 
-
 # CodeMe.ServiceErrors
 
 CodeMe.ServiceErrors is a library for describing service-level errors as first-class values and turning them into serializable payloads or exceptions. It is designed for APIs, background services, and distributed systems where you want a stable error contract across app boundaries.
