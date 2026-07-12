@@ -22,7 +22,7 @@ jobs:
       run:  dotnet test --report-trx --results-directory=".artifacts/test-results" --no-build --no-restore || true
     - name: Publish Test Report
       uses: dorny/test-reporter@v3
-      if:   always()
+      if:   ${{ !cancelled() }}
       with:
         name: .NET Core Tests
         path: ".artifacts/test-results/**/*.trx"
