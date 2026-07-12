@@ -1,3 +1,5 @@
+using Dapper;
+
 namespace CodeMe.Data.UnitOfWork.Implementation;
 
 /// <summary>
@@ -113,7 +115,7 @@ public static class UnitOfWorkDapperExtensions
         string commandText,
         object? parameters = null,
         CancellationToken cancellation = default) =>
-        new CommandDefinition(
+        new(
             commandText,
             parameters,
             unitOfWork.Transaction,
