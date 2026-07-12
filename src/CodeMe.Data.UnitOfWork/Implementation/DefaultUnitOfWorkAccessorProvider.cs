@@ -10,7 +10,7 @@ internal class DefaultUnitOfWorkAccessorProvider<TUnitOfWorkAccessor>
     {
         _accessorsDictionary =
             unitOfWorkAccessors.ToDictionary(
-                key => key.GetClusterName(),
+                key => key.Name,
                 value => value,
                 StringComparer.OrdinalIgnoreCase)
             ?? throw new ArgumentNullException(nameof(unitOfWorkAccessors));
