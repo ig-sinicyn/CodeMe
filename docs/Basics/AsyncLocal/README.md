@@ -39,7 +39,7 @@ using (context.BeginScope("request-1"))
 
 Console.WriteLine(context.Current); // null
 ```
-n t
+
 `ScopedAsyncLocal<T>` also works with asynchronous flows. The value from the current scope is available after `await`; the scope must be disposed to restore the previous value.
 
 ```csharp
