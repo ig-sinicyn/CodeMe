@@ -1,10 +1,16 @@
+# Custom ambient contexts
+
+There are many scenarios in which you do not want to expose `AsyncLocal` or `ScopedAsyncLocal` directly to external code. This document uses a simplified unit-of-work example to show how you can introduce a custom ambient context on top of `ScopedAsyncLocal<T>`.
+
+Usage
+
 ```csharp
 using System.Data;
 using System.Data.Common;
-using CodeMe.Basics.Threading;
+using CodeMe.Threading;
 
 var unitOfWorkManager = new UnitOfWorkManager();
-var repository = new UserRepository(unitOfWorkManager); // Usually, this is injected via DI container.
+var repository = new UserRepository(unitOfWorkManager); // Usually, this is injected via a DI container.
 
 await using (var unitOfWork = await unitOfWorkManager.BeginUnitOfWorkAsync())
 {
@@ -22,8 +28,11 @@ async ValueTask<User> GetUserAsync(long id)
 
     return await unitOfWork.Connection.QueryFirstAsync(...);
 }
+```
 
+Implementation
 
+```csharp
 // Simplified version for demonstration purposes. In real-world scenarios, consider using a more robust implementation.
 public class UnitOfWorkManager
 {
@@ -39,7 +48,7 @@ public class UnitOfWorkManager
     {
         // IMPORTANT:
         // The BeginScopeInitialization method SHOULD be called in the synchronous part of the method.
-        // Otherwise, the new AsyncLocal value will not be stored in the caller's execution context,
+        // Otherwise, the new AsyncLocal value will not be stored in the caller's execution context.
         var scope = _scopedAsyncLocal.BeginScopeInitialization();
         return BeginUnitOfWorkAsync(scope, isolation);
     }
@@ -49,8 +58,8 @@ public class UnitOfWorkManager
         IsolationLevel isolation)
     {
         // Asynchronous part.
-        // Performs step-by-step initialization of the UnitOfWork instance
-        // and assigns it to the scope. If any exception occurs, UnitOfWork (and all related resources) will be disposed.
+        // Performs a step-by-step initialization of the UnitOfWork instance
+        // and assigns it to the scope. If any exception occurs, the UnitOfWork instance (and all related resources) will be disposed.
         var result = new UnitOfWork();
         try
         {
@@ -62,7 +71,7 @@ public class UnitOfWorkManager
             var transaction = await connection.BeginTransactionAsync(isolation);
             result.Initialize(transaction);
 
-            // Assign fully constructed UnitOfWork to the scope.
+            // Assign the fully constructed UnitOfWork to the scope.
             // This is the only place where the scope value is set.
             scope.Initialize(result);
 
@@ -87,11 +96,11 @@ public sealed class UnitOfWork : IAsyncDisposable
 
     public DbTransaction Transaction { get; private set; }
 
-    public void Initialize(DbConnection connection) => _connection = connection;
+    internal void Initialize(DbConnection connection) => _connection = connection;
 
-    public void Initialize(DbTransaction transaction) => _transaction = transaction;
+    internal void Initialize(DbTransaction transaction) => _transaction = transaction;
 
-    public void Initialize(IDisposable asyncScope) => _asyncScope = asyncScope;
+    internal void Initialize(IDisposable asyncScope) => _asyncScope = asyncScope;
 
     public async ValueTask CommitAsync()
     {
@@ -108,10 +117,8 @@ public sealed class UnitOfWork : IAsyncDisposable
     public ValueTask DisposeAsync()
     {
         // IMPORTANT:
-        // For performance-sensitive code
-        // it is recommended to Dispose scope in synchronous part of DisposeAsync.
-        // The trick slightly reduces the memory usage
-        // as it clears AsyncLocal value in the caller's execution context.
+        // For performance-sensitive code, it is recommended to dispose the scope in the synchronous part of DisposeAsync.
+        // This slightly reduces memory usage, because it clears the AsyncLocal value in the caller's execution context.
         _asyncScope?.Dispose();
         return DisposeCoreAsync();
     }

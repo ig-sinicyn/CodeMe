@@ -1,27 +1,26 @@
 
 # ScopedAsyncLocal<T>
 
-`ScopedAsyncLocal<T>` provides ambient context for a logical execution flow. It is useful when a value should be available to all code in the current flow without explicitly passing it through every method call. Typical scenarios include unit of work scopes, request correlation identifiers, tenant information, etc.
+`ScopedAsyncLocal<T>` provides ambient context for a logical execution flow. It is useful when a value should be available without explicitly passing it through every method call. Typical scenarios include unit-of-work scopes, request correlation identifiers, and tenant information.
 
 ## How it works
 
-`ScopedAsyncLocal<T>` provides ambient context by keeping a stack of scopes for the current execution flow. Each scope represents a logical boundary such as a request, unit-of-work, or tenant context. When you call `BeginScope` or `BeginScopeAsync`, a new scope is pushed onto the current execution context, and `Current` resolves to the value from the innermost initialized scope.
+`ScopedAsyncLocal<T>` is built on top of `AsyncLocal<T>` and maintains a stack of scopes for the current [execution flow](https://learn.microsoft.com/en-us/dotnet/api/system.threading.executioncontext). Each scope represents a logical boundary, such as a request, a unit of work, or a tenant context. You can create multiple instances of `ScopedAsyncLocal<T>`, and each instance tracks its own value independently.
 
-Nested scopes override the parent value while they are active. When the child scope is disposed, the previous ambient value is restored automatically, so the value behaves like a flow-scoped context without having to pass it through every method call.
+When you call `BeginScope` or `BeginScopeAsync`, a new scope is pushed onto the current execution context, and `Current` resolves to the value from the topmost initialized scope. If you call these methods from an async C# method, the new scope is stored in a copy of the execution context and will not be available to the caller of that async method. See [the example](#passing-scope-to-external-code) below for more details.
 
-The implementation uses `AsyncLocal<T>` under the hood, which means the value is captured per async flow. Because async calls create copies of the execution context, initialization is split into two steps:
+It is important to dispose scopes when they are no longer needed. A leaked scope will not be collected until the end of its execution context lifetime. In long-running code, tight loops, or deeply nested async flows, leaving scopes undisposed can lead to noticeable memory leaks.
 
-- the scope is created synchronously so it can be observed immediately by the caller;
-- the scope value is initialized later, and uninitialized scopes are ignored while resolving `Current`.
+The recommended approach is to use the `using` keyword with the scope returned by `BeginScope...`. If you want to store a scope as a field, there is a [detailed example](CustomScope.md) for custom scope wrappers.
 
-This design lets the new scope be available to the caller right away, while still supporting asynchronous value factories. The library also keeps a stack of scopes so it can restore the previous value when a scope is disposed. If you forget to dispose scopes, the stack can grow and hold references longer than intended. When `validateDisposeOrder: true` is used, disposing scopes in the wrong order throws an exception.
+To make leaked-scope detection easier, you can construct `ScopedAsyncLocal<T>` with `validateDisposeOrder: true` to detect out-of-order scope disposal.
 
-## Scenarios and example of usage
+## Main scenario
 
-Use `ScopedAsyncLocal<T>` when a value should be available to the current logical execution path and reverted automatically when the scope ends. The value is visible to nested scopes and is restored to the previous ambient value when the scope is disposed.
+Use `ScopedAsyncLocal<T>` when a value should be available for the current logical execution path and reverted automatically when the scope ends. The value is visible to nested scopes and is restored to the previous ambient value when the scope is disposed.
 
 ```csharp
-using CodeMe.Basics.Threading;
+using CodeMe.Threading;
 
 var context = new ScopedAsyncLocal<string>();
 
@@ -40,54 +39,73 @@ using (context.BeginScope("request-1"))
 Console.WriteLine(context.Current); // null
 ```
 
-`ScopedAsyncLocal<T>` also works with asynchronous flows. The value from the current scope is available after `await`; the scope must be disposed to restore the previous value.
+## Passing scope to external code
+
+If you want to pass a new scope back to the parent method, you should call the `Begin...` method without changing the current execution context. To do so, do not mark your methods as async. Async methods run on a copy of the parent context, so the new scope will not be accessible by the parent method.
+
+For asynchronous initialization, place the initialization code in the callback passed to `BeginScopeAsync`.
 
 ```csharp
-var local = new ScopedAsyncLocal<string>();
+using CodeMe.Threading;
 
-using (await local.BeginScopeAsync(() => new ValueTask<string>("request-2")))
+var context = new ScopedAsyncLocal<string>();
+var id = Guid.Parse("7b90489c-7d81-42bc-99d6-ba6dc118375f");
+
+// External code
+using (await BeginCustomScopeAsync(id))
 {
-    Console.WriteLine(local.Current); // request-2
+    Console.WriteLine(context.Current); // 7b90489c-7d81-42bc-99d6-ba6dc118375f
 }
+
+Console.WriteLine(context.Current); // null
+
+// Your helper
+ValueTask<IDisposable> BeginCustomScopeAsync(Guid userId)
+{
+    // The method MUST be synchronous
+    return context.BeginScopeAsync(async () => await GetUserStateAsync(userId));
+}
+
+Task<string> GetUserStateAsync(Guid userId) => Task.FromResult(userId.ToString());
 ```
 
-The constructor can be used with `validateDisposeOrder: true` to detect out-of-order scope disposal.
-
-## Using BeginScopeAsync from helper methods
-
-`BeginScopeAsync` initializes the scope asynchronously through a value factory. If you call it from a helper method, keep the helper synchronous and avoid `await` in the call. Otherwise new scope will not be propagated back to the caller. The value factory itself may use `await`.
+For advanced scenarios, there is a `BeginScopeInitialization`/`Initialize` two-step pattern. Its primary purpose is to create a custom scope, and it requires some care from the caller. See the [custom scope example](CustomScope.md) for more details.
 
 ```csharp
-    private Task<IDisposable> BeginUnitOfWorkAsync(
-        ScopedAsyncLocal<IUnitOfWork> local,
-        CancellationToken cancellation = default) =>
-        local.BeginScopeAsync(
-            async () =>
-            {
-                // The body is simplified for demonstration purposes.
-                DbConnection? connection = null;
-                DbTransaction? transaction = null;
-                try
-                {
-                    connection = await _connectionFactory.CreateConnectionAsync(cancellation);
-                    await connection.OpenAsync(cancellation);
-                    transaction = await connection.BeginTransactionAsync(cancellation);
+using CodeMe.Threading;
 
-                    return new UnitOfWork(connection, transaction);
-                }
-                catch (Exception ex)
-                {
-                    if (transaction != null)
-                    {
-                        await transaction.DisposeAsync();
-                    }
+var context = new ScopedAsyncLocal<string>();
+var id = Guid.Parse("7b90489c-7d81-42bc-99d6-ba6dc118375f");
 
-                    if (connection != null)
-                    {
-                        await connection.DisposeAsync();
-                    }
+using (await BeginCustomScopeAsync(id))
+{
+    Console.WriteLine(context.Current); // 7b90489c-7d81-42bc-99d6-ba6dc118375f
+}
 
-                    throw;
-                }
-            });
+Console.WriteLine(context.Current); // null
+
+ValueTask<IDisposable> BeginCustomScopeAsync(Guid userId)
+{
+    // The method MUST be synchronous
+    var scope = context.BeginScopeInitialization();
+    return CompleteBeginCustomScopeAsync(scope, userId);
+}
+
+async ValueTask<IDisposable> CompleteBeginCustomScopeAsync(ScopedAsyncLocal<string>.Scope scope, Guid userId)
+{
+    // Asynchronous part
+    try
+    {
+        var state = await GetUserStateAsync(userId);
+        scope.Initialize(state);
+        return scope;
+    }
+    catch (Exception)
+    {
+        scope.Dispose();
+        throw;
+    }
+}
+
+Task<string> GetUserStateAsync(Guid userId) => Task.FromResult(userId.ToString());
 ```

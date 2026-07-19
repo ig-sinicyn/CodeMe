@@ -1,29 +1,23 @@
 # CodeMe.ServiceErrors
 
-CodeMe.ServiceErrors is a library for describing service-level errors as first-class values and turning them into serializable payloads or exceptions. It is designed for APIs, background services, and distributed systems where you want a stable error contract across app boundaries.
+CodeMe.ServiceErrors is a library for describing service-level errors as first-class values and turning them into serializable payloads or exceptions. It is designed for APIs, background services, and distributed systems where a stable error contract across application boundaries is important.
 
-## Introduction
+## How it works
 
-The core model is built around a few simple concepts:
+The library separates an error's identity, its semantics, and its transport shape:
 
-* `ServiceError` carries well-known error descriptor together with a human-friendly message and optional inner details.
-* `ErrorDescriptor` describes an error with a problem type (error URI), HTTP-like status, transience, and severity.
-* `ErrorUri` and `ErrorGroupUri` represent problem type URI inspired by [RFC 9457: Problem Details for HTTP APIs](https://datatracker.ietf.org/doc/html/rfc9457).
-* `ServiceErrorDto` represents serializable service error format.
-* `ServiceException` and `IServiceException` allow to pass service errors as exceptions.
-* `IServiceErrorFactory` converts between `ServiceError`, `ServiceErrorDto`, and `IServiceException`.
+1. `ErrorGroupUri` and `ErrorUri` describe a stable problem type such as `problem://orders-api/orders/order-not-found`. The URI format is compatible with [RFC 9457: Problem Details for HTTP APIs](https://datatracker.ietf.org/doc/html/rfc9457).
+2. `ErrorDescriptor` adds the runtime semantics: HTTP-like status, transience, and severity.
+3. `ServiceError` is the value you pass around inside your application. It combines the descriptor with a human-readable message and optional inner exception or nested errors, so the contract stays explicit without forcing every caller to use exceptions.
+4. `IServiceErrorFactory` is the bridge between the in-process model and the outside world. It can convert a `ServiceError` into a serializable `ServiceErrorDto`, restore a `ServiceError` from a DTO, or create an exception for a known error.
+5. `ServiceException` and `IServiceException` let you propagate the same error as an exception while preserving the underlying descriptor. When the factory knows about a registered error, it can instantiate a typed exception for that descriptor or its containing group.
+6. Matching helpers (`Matches`, `MatchesAny`) compare descriptors, error groups, error URIs, and status codes so callers can branch on well-known errors without hard-coding strings.
 
-Typical usage scenarios include:
+In practice, you usually define a small set of well-known descriptors once, register them in DI, create and inspect `ServiceError` values in your domain code, and serialize them at API boundaries. That gives you a contract that is stable for tooling, readable for humans, and cheap to process in production code.
 
-* Enforcing usage of well-known domain errors.
-* Exposing a predictable error contract from HTTP APIs or gRPC services.
-* Registering error definitions in DI so services can create and rehydrate errors consistently.
-* Passing errors across process boundaries using a serializable error payload.
-* Use allocation-free typed errors instead of error codes or exceptions in performance-sensitive code.
+## Basic examples
 
-### Minimal example
-
-Handling the errors:
+Handling errors:
 ```csharp
 using CodeMe.ServiceErrors;
 
@@ -101,15 +95,15 @@ internal sealed class OrderNotFoundException : ServiceException
 }
 ```
 
-## Advanced usage
+## More scenarios
 
 ### Checking for well-known errors
 
-All error-related types do provide `Matches(...)` / `MatchesAny()` methods. Match logic works as follows:
-* x matches to StatusCode: exact match.
-* x matches to ErrorUri: exact match.
-* x matches to ErrorGroupUri: match if x.Group is descendant of specified error group.
-* x matches to ErrorDescriptor: match if x.Type and x.StatusCode are equal to descriptor's type and status code.
+All error-related types provide `Matches(...)` and `MatchesAny()` methods. Matching works as follows:
+* x matches a status code: exact match.
+* x matches an `ErrorUri`: exact match.
+* x matches an `ErrorGroupUri`: matches if `x.Group` is a descendant of the specified error group.
+* x matches an `ErrorDescriptor`: matches if `x.Type` and `x.StatusCode` are equal to the descriptor's type and status code.
 
 Example usage:
 ```csharp
@@ -128,7 +122,7 @@ if (error.Matches(notFoundDescriptor))
 {
 }
 
-// Test for error groups (checks if any group do contain descriptor's error group)
+// Test for error groups (checks whether any group contains the descriptor's error group)
 if (notFoundDescriptor.MatchesAny(rootGroup, otherAppGroup))
 {
 }
@@ -183,7 +177,7 @@ ServiceError restored = factory.CreateError(dto);
 
 ### Exception Mapping
 
-You can attach an exception type to a well-known error descriptor or error group with the `ServiceExceptionAttribute` family. When a matching error is turned into an exception, the factory instantiates the configured exception type. The target exception type must expose a public constructor that accepts `ServiceError` as a single argument.
+You can attach an exception type to a well-known error descriptor or error group through the `ServiceExceptionAttribute` family. When a matching error is turned into an exception, the factory instantiates the configured exception type. The target exception type must expose a public constructor that accepts `ServiceError` as its single argument.
 
 ```csharp
 using CodeMe.ServiceErrors;
@@ -204,7 +198,7 @@ ServiceError restoredError = factory.CreateError((Exception)exception);
 
 #### Unknown exceptions
 
-If exception is not registered, the `IServiceErrorFactory.CreateError()` method will return ServiceException with error code derived from exception's type.
+If an exception is not registered, the `IServiceErrorFactory.CreateError()` method returns a `ServiceException` whose error code is derived from the exception's type.
 
 ```csharp
 using CodeMe.ServiceErrors;
@@ -224,11 +218,11 @@ var error = factory.CreateError(ex);
 ```
 
 
-### DI registrations of well-known errors
+### DI registrations for well-known errors
 
 The DI extensions support three common registration patterns:
 
-- Register a specific well-known errors type.
+- Register a specific well-known error type.
 - Register all well-known error types from one assembly.
 - Register well-known error types from an assembly and its referenced assemblies.
 
@@ -261,7 +255,7 @@ The `Add` overload registers the static error container type directly. `AddAssem
 
 #### Typed error factories and per-factory well-known error registration
 
-In some cases it is useful to have a custom error factory configuration instead of the default one. As example, you may want to have a specialized error factory for client of some external service and do not want external service errors to be used across the rest of your application. Meet the typed factory concept. You have to create a marker interface derived from `IServiceErrorFactory` and use it as a type argument for the `AddServiceErrors<TErrorFactory>()` call.
+In some cases, it is useful to have a custom error factory configuration rather than the default one. For example, you may want a specialized error factory for a client of an external service without allowing those external service errors to be used across the rest of your application. Meet the typed factory concept. You must create a marker interface derived from `IServiceErrorFactory` and use it as the type argument for the `AddServiceErrors<TErrorFactory>()` call.
 
 ```csharp
 using CodeMe.ServiceErrors;
@@ -284,7 +278,7 @@ With this setup, the container can resolve `IOrdersErrorFactory` as a typed serv
 
 ### DI-free error factory
 
-For scenarios where you do not want to use DI, you can create a service error factory directly using `DefaultServiceErrorFactoryBuilder`. Same configuration, no DI.
+For scenarios where you do not want to use DI, you can create a service error factory directly using `DefaultServiceErrorFactoryBuilder` with the same configuration and without DI.
 
 ```csharp
 using CodeMe.ServiceErrors;

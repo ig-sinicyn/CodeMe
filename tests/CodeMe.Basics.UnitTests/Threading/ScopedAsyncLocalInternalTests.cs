@@ -1,4 +1,4 @@
-﻿using CodeMe.Basics.Threading;
+﻿using CodeMe.Threading;
 
 namespace CodeMe.Basics.UnitTests.Threading;
 
@@ -306,7 +306,7 @@ public class ScopedAsyncLocalInternalTests
         var afterCall = internals.GetSingleSnapshot();
 
         completion.SetResult();
-        await Assert.ThrowsAsync<InvalidOperationException>(() => task);
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await task);
         var afterAwait = internals.GetSingleSnapshot();
 
         // Assert

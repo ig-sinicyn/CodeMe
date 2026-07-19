@@ -1,4 +1,4 @@
-﻿using CodeMe.Basics.Threading;
+﻿using CodeMe.Threading;
 
 namespace CodeMe.Basics.UnitTests.Threading;
 
@@ -287,7 +287,7 @@ public class ScopedAsyncLocalTests
         Assert.Throws<InvalidOperationException>(() => scope.Dispose());
     }
 
-    private static Task<IDisposable> BeginScopeAsync(ScopedAsyncLocal<string> local, string value) =>
+    private static ValueTask<IDisposable> BeginScopeAsync(ScopedAsyncLocal<string> local, string value) =>
         local.BeginScopeAsync(
             async () =>
             {

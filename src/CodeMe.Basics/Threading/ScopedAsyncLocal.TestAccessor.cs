@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace CodeMe.Basics.Threading;
+namespace CodeMe.Threading;
 
 public partial class ScopedAsyncLocal<T>
 {

@@ -1,4 +1,4 @@
-﻿using CodeMe.Basics.Threading;
+﻿using CodeMe.Threading;
 
 namespace CodeMe.Basics.UnitTests.Threading;
 
