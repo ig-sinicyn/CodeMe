@@ -4,29 +4,6 @@
 - CodeMe.ServiceErrors — describe service-level errors as first-class values, carry them as `ServiceError`, serialize them to DTOs, and map them to typed exceptions. See the [full documentation](docs/ServiceErrors/README.md).
 - CodeMe.Basics — small infrastructure helpers such as `ScopedAsyncLocal<T>` for ambient execution context and logical scopes. See the [full documentation](docs/Basics/AsyncLocal/README.md).
 
-# CodeMe.Basics
-
-CodeMe.Basics provides small, reusable infrastructure types that complement the BCL.
-
-## ScopedAsyncLocal<T>
-
-`ScopedAsyncLocal<T>` lets you carry ambient context through a logical execution flow without explicitly passing it through every method call. Use `ScopedAsyncLocal<T>` for values such as request IDs, unit-of-work state, or tenant information. The value is automatically restored when the scope is disposed.
-
-```csharp
-using CodeMe.Threading;
-
-var context = new ScopedAsyncLocal<string>();
-
-using (context.BeginScope("request-1"))
-{
-	Console.WriteLine(context.Current); // request-1
-}
-
-Console.WriteLine(context.Current); // null
-```
-
-`ScopedAsyncLocal<T>` also supports asynchronous flows and nested scopes. For more details and additional examples, see the [full documentation](docs/Basics/AsyncLocal/README.md).
-
 # CodeMe.ServiceErrors
 
 CodeMe.ServiceErrors helps you describe service-level errors as first-class values and propagate them consistently across application boundaries.
@@ -50,5 +27,28 @@ var descriptor = ErrorDescriptor.NotFound(
 
 var error = new ServiceError(descriptor, "Order 42 was not found");
 ```
+
+# CodeMe.Basics
+
+CodeMe.Basics provides small, reusable infrastructure types that complement the BCL.
+
+## ScopedAsyncLocal<T>
+
+`ScopedAsyncLocal<T>` lets you carry ambient context through a logical execution flow without explicitly passing it through every method call. Use `ScopedAsyncLocal<T>` for values such as request IDs, unit-of-work state, or tenant information. The value is automatically restored when the scope is disposed.
+
+```csharp
+using CodeMe.Threading;
+
+var context = new ScopedAsyncLocal<string>();
+
+using (context.BeginScope("request-1"))
+{
+	Console.WriteLine(context.Current); // request-1
+}
+
+Console.WriteLine(context.Current); // null
+```
+
+`ScopedAsyncLocal<T>` also supports asynchronous flows and nested scopes. For more details and additional examples, see the [full documentation](docs/Basics/AsyncLocal/README.md).
 
 For more details, examples, and guidance on DI registration, serialization, and exception mapping, see the [full documentation](docs/ServiceErrors/README.md).

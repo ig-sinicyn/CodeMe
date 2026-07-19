@@ -24,4 +24,4 @@ var error = new ServiceError(descriptor, "Order 42 was not found");
 
 For more details, examples, and guidance on DI registration, serialization, and exception mapping, see the full documentation:
 
-https://github.com/ig-sinicyn/CodeMe/blob/feature/unit-of-work/docs/ServiceErrors/README.md
+https://github.com/ig-sinicyn/CodeMe/blob/master/docs/ServiceErrors/README.md
