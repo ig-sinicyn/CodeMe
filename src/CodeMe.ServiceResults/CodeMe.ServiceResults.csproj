@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Description>Library for typed service errors (Problem Details-alike DTOs)</Description>
+		<PackageTags>errors;typed errors</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="../CodeMe.ServiceErrors.Abstractions/CodeMe.ServiceErrors.Abstractions.csproj" />
+	</ItemGroup>
+
+</Project>
