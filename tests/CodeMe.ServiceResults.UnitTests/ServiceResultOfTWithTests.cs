@@ -364,16 +364,12 @@ public class ServiceResultOfTWithTests
             .And.Be(Ok(3));
         withGenericError
             .Should().BeOfType<ServiceResult<int>>()
-            .And.Be(FromError<int>(_testError))
-            .And.Satisfy();
+            .And.Be(FromError<int>(_testError));
     }
 
     [Fact]
     public async Task WithAsyncForErrorOfTTask_ShouldBeExpected()
     {
-
-        var a = new List<int>();
-        a.d;
         // Arrange
         var resultFactory = () => new ValueTask<ServiceResult<double>>(_startTestError);
 

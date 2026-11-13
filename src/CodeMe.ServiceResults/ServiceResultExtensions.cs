@@ -3,43 +3,43 @@
 public static class ServiceResultExtensions
 {
     public static ServiceResult With(this ServiceResult source, Func<ServiceResult> callback) =>
-        source.Error is { } error ? error : callback();
+        source.Error ?? callback();
 
     public static ServiceResult<T> With<T>(this ServiceResult source, Func<ServiceResult<T>> callback) =>
-        source.Error is { } error ? error : callback();
+        source.Error ?? callback();
 
     public static ServiceResult With<T>(this ServiceResult<T> source, Func<T, ServiceResult> callback) =>
-        source.Error is { } error ? error : callback(source.Value);
+        source.Error ?? callback(source.Value);
 
     public static ServiceResult<T2> With<T1, T2>(this ServiceResult<T1> source, Func<T1, ServiceResult<T2>> callback) =>
-        source.Error is { } error ? error : callback(source.Value);
+        source.Error ?? callback(source.Value);
 
     public static ValueTask<ServiceResult> WithAsync(
         this ServiceResult source,
         Func<ValueTask<ServiceResult>> callback) =>
         source.Error is { } error
-            ? ValueTask.FromResult<ServiceResult>(error)
+            ? new ValueTask<ServiceResult>(error)
             : callback();
 
     public static ValueTask<ServiceResult<T>> WithAsync<T>(
         this ServiceResult source,
         Func<ValueTask<ServiceResult<T>>> callback) =>
         source.Error is { } error
-            ? ValueTask.FromResult<ServiceResult<T>>(error)
+            ? new ValueTask<ServiceResult<T>>(error)
             : callback();
 
     public static ValueTask<ServiceResult> WithAsync<T>(
         this ServiceResult<T> source,
         Func<T, ValueTask<ServiceResult>> callback) =>
         source.Error is { } error
-            ? ValueTask.FromResult<ServiceResult>(error)
+            ? new ValueTask<ServiceResult>(error)
             : callback(source.Value);
 
     public static ValueTask<ServiceResult<T2>> WithAsync<T1, T2>(
         this ServiceResult<T1> source,
         Func<T1, ValueTask<ServiceResult<T2>>> callback) =>
         source.Error is { } error
-            ? ValueTask.FromResult<ServiceResult<T2>>(error)
+            ? new ValueTask<ServiceResult<T2>>(error)
             : callback(source.Value);
 
     public static ValueTask<ServiceResult> WithAsync(
@@ -47,7 +47,7 @@ public static class ServiceResultExtensions
         Func<ServiceResult> callback)
     {
         return source.IsCompleted
-            ? ValueTask.FromResult(source.Result.With(callback))
+            ? new ValueTask<ServiceResult>(source.Result.With(callback))
             : CompleteAsync(source, callback);
 
         static async ValueTask<ServiceResult> CompleteAsync(
@@ -64,7 +64,7 @@ public static class ServiceResultExtensions
         Func<ServiceResult<T>> callback)
     {
         return source.IsCompleted
-            ? ValueTask.FromResult(source.Result.With(callback))
+            ? new ValueTask<ServiceResult<T>>(source.Result.With(callback))
             : CompleteAsync(source, callback);
 
         static async ValueTask<ServiceResult<T>> CompleteAsync(
@@ -81,7 +81,7 @@ public static class ServiceResultExtensions
         Func<T, ServiceResult> callback)
     {
         return source.IsCompleted
-            ? ValueTask.FromResult(source.Result.With(callback))
+            ? new ValueTask<ServiceResult>(source.Result.With(callback))
             : CompleteAsync(source, callback);
 
         static async ValueTask<ServiceResult> CompleteAsync(
@@ -98,7 +98,7 @@ public static class ServiceResultExtensions
         Func<T1, ServiceResult<T2>> callback)
     {
         return source.IsCompleted
-            ? ValueTask.FromResult(source.Result.With(callback))
+            ? new ValueTask<ServiceResult<T2>>(source.Result.With(callback))
             : CompleteAsync(source, callback);
 
         static async ValueTask<ServiceResult<T2>> CompleteAsync(
