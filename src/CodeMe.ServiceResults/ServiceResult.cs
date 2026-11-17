@@ -57,17 +57,22 @@ public readonly struct ServiceResult : IEquatable<ServiceResult>, ServiceResult.
 
     public bool Equals(ServiceResult other) => _error?.Equals(other._error) ?? false;
 
-    public override bool Equals([NotNullWhen(true)] object? obj) => obj is ServiceResult x && Equals(x);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is ServiceResult result && Equals(result);
 
     public override int GetHashCode() => _error?.GetHashCode() ?? 0;
 
     public interface IUnionMembers
     {
         public static ServiceResult Create(OkResult ok) => new();
+
         public static ServiceResult Create(ServiceError error) => new(error);
-        public object? Value { get; }
+
+        public object Value { get; }
+
         public bool HasValue { get; }
+
         public bool TryGetValue(out OkResult value);
+
         public bool TryGetValue(out ServiceError value);
     }
 }

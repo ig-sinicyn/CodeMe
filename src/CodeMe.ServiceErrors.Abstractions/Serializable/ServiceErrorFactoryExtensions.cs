@@ -16,4 +16,10 @@ public static class ServiceErrorFactoryExtensions
     /// </summary>
     public static IServiceException CreateException(this IServiceErrorFactory factory, ServiceErrorDto error) =>
         factory.CreateException(factory.CreateError(error));
+
+    /// <summary>
+    /// Creates proper exception from <see cref="ServiceException"/>.
+    /// </summary>
+    public static IServiceException CreateException(this IServiceErrorFactory factory, Exception exception) =>
+        factory.CreateException(factory.CreateError(exception));
 }

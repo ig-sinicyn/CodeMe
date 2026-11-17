@@ -26,6 +26,7 @@ public class EmittedFactoryTests
 
         // Act
         var knownDto = factory.CreateDto(knownError);
+        var fromException = factory.CreateDto(new ServiceException(knownError));
 
         // Assert
         knownDto.Should().BeEquivalentTo(
@@ -38,6 +39,7 @@ public class EmittedFactoryTests
                 StatusCode = UserNotFound.StatusCode,
                 Message = knownError.Message
             });
+        fromException.Should().BeEquivalentTo(knownDto);
     }
 
     [Fact]
@@ -51,6 +53,7 @@ public class EmittedFactoryTests
 
         // Act
         var knownDto = factory.CreateDto(knownError);
+        var fromException = factory.CreateDto(new ServiceException(knownError));
 
         // Assert
         factory.Should().BeAssignableTo<TestErrorFactoryBase>();
@@ -64,6 +67,7 @@ public class EmittedFactoryTests
                 StatusCode = UserNotFound.StatusCode,
                 Message = knownError.Message
             });
+        fromException.Should().BeEquivalentTo(knownDto);
     }
 
     [Fact]
@@ -91,6 +95,7 @@ public class EmittedFactoryTests
 
         // Act
         var knownDto = factory.CreateDto(knownError);
+        var fromException = factory.CreateDto(new ServiceException(knownError));
 
         // Assert
         knownDto.Should().BeEquivalentTo(
@@ -103,6 +108,7 @@ public class EmittedFactoryTests
                 StatusCode = UserNotFound.StatusCode,
                 Message = knownError.Message
             });
+        fromException.Should().BeEquivalentTo(knownDto);
     }
 
     [Fact]
@@ -116,6 +122,7 @@ public class EmittedFactoryTests
 
         // Act
         var knownDto = factory.CreateDto(knownError);
+        var fromException = factory.CreateDto(new ServiceException(knownError));
 
         // Assert
         factory.Should().BeAssignableTo<TestErrorFactoryBase>();
@@ -129,5 +136,6 @@ public class EmittedFactoryTests
                 StatusCode = UserNotFound.StatusCode,
                 Message = knownError.Message
             });
+        fromException.Should().BeEquivalentTo(knownDto);
     }
 }
