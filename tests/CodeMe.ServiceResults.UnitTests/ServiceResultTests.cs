@@ -14,10 +14,10 @@ public class ServiceResultTests
         // Arrange
         var okResult = ServiceResult.Ok();
         var passed = okResult switch
-            {
-                OkResult => "ok",
-                ServiceError x => x.Descriptor.ShortCode
-            };
+        {
+            OkResult => "ok",
+            ServiceError x => x.Descriptor.ShortCode
+        };
 
         // Assert
         passed.Should().Be("ok");
@@ -31,10 +31,10 @@ public class ServiceResultTests
         // Arrange
         var failedResult = ServiceResult.FromError(new ServiceError(_error, "aaa"));
         var failed = failedResult switch
-            {
-                OkResult => "ok",
-                ServiceError x => x.Descriptor.ShortCode
-            };
+        {
+            OkResult => "ok",
+            ServiceError x => x.Descriptor.ShortCode
+        };
 
         // Assert
         failed.Should().Be("test-error");
@@ -48,14 +48,32 @@ public class ServiceResultTests
         // Arrange
         var okResult = ServiceResult.Ok(123);
         var passed = okResult switch
-            {
-                int x => x.ToString(),
-                ServiceError x => x.Descriptor.ShortCode
-            };
+        {
+            int x => x.ToString(),
+            ServiceError x => x.Descriptor.ShortCode
+        };
 
         // Assert
         passed.Should().Be("123");
         okResult.Value.Should().Be(123);
+        okResult.IsError.Should().BeFalse();
+        okResult.Error.Should().BeNull();
+    }
+
+    [Fact]
+    public void Ok_String_ShouldBeExpected()
+    {
+        // Arrange
+        var okResult = ServiceResult.Ok("123");
+        var passed = okResult switch
+        {
+            string x => x,
+            ServiceError x => x.Descriptor.ShortCode
+        };
+
+        // Assert
+        passed.Should().Be("123");
+        okResult.Value.Should().Be("123");
         okResult.IsError.Should().BeFalse();
         okResult.Error.Should().BeNull();
     }
@@ -66,11 +84,11 @@ public class ServiceResultTests
         // Arrange
         var okResult = ServiceResult.Ok<int?>(123);
         var passed = okResult switch
-            {
-                null => "null",
-                int x => x.ToString(),
-                ServiceError x => x.Descriptor.ShortCode
-            };
+        {
+            null => "null",
+            int x => x.ToString(),
+            ServiceError x => x.Descriptor.ShortCode
+        };
 
         // Assert
         passed.Should().Be("123");
@@ -85,11 +103,11 @@ public class ServiceResultTests
         // Arrange
         var okResult = ServiceResult.Ok<string?>("123");
         var passed = okResult switch
-            {
-                null => "null",
-                string x => x,
-                ServiceError x => x.Descriptor.ShortCode
-            };
+        {
+            null => "null",
+            string x => x,
+            ServiceError x => x.Descriptor.ShortCode
+        };
 
         // Assert
         passed.Should().Be("123");
@@ -104,11 +122,11 @@ public class ServiceResultTests
         // Arrange
         var okResult = ServiceResult.Ok<int?>(null);
         var passed = okResult switch
-            {
-                null => "null",
-                int x => x.ToString(),
-                ServiceError x => x.Descriptor.ShortCode
-            };
+        {
+            null => "null",
+            int x => x.ToString(),
+            ServiceError x => x.Descriptor.ShortCode
+        };
 
         // Assert
         passed.Should().Be("null");
@@ -123,11 +141,11 @@ public class ServiceResultTests
         // Arrange
         var okResult = ServiceResult.Ok<string?>(null);
         var passed = okResult switch
-            {
-                null => "null",
-                string x => x,
-                ServiceError x => x.Descriptor.ShortCode
-            };
+        {
+            null => "null",
+            string x => x,
+            ServiceError x => x.Descriptor.ShortCode
+        };
 
         // Assert
         passed.Should().Be("null");
@@ -142,10 +160,10 @@ public class ServiceResultTests
         // Arrange
         var failedResult = ServiceResult.FromError<int>(new ServiceError(_error, "aaa"));
         var failed = failedResult switch
-            {
-                int x => x.ToString(),
-                ServiceError x => x.Descriptor.ShortCode
-            };
+        {
+            int x => x.ToString(),
+            ServiceError x => x.Descriptor.ShortCode
+        };
 
         // Assert
         failed.Should().Be("test-error");
@@ -161,11 +179,11 @@ public class ServiceResultTests
         // Arrange
         var failedResult = ServiceResult.FromError<int?>(new ServiceError(_error, "aaa"));
         var failed = failedResult switch
-            {
-                null => "null",
-                int x => x.ToString(),
-                ServiceError x => x.Descriptor.ShortCode
-            };
+        {
+            null => "null",
+            int x => x.ToString(),
+            ServiceError x => x.Descriptor.ShortCode
+        };
 
         // Assert
         failed.Should().Be("test-error");
