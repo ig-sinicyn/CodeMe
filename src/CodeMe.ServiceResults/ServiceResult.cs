@@ -13,6 +13,8 @@ public readonly struct ServiceResult : IEquatable<ServiceResult>, ServiceResult.
 
     public static implicit operator ServiceResult(ServiceError error) => new(error);
 
+    public static implicit operator ServiceResult(OkResult ok) => new();
+
     public static ServiceResult Ok() => new();
 
     public static ServiceResult FromError(ServiceError error) => new(error);
@@ -33,13 +35,13 @@ public readonly struct ServiceResult : IEquatable<ServiceResult>, ServiceResult.
         _error = error;
     }
 
-    public ServiceError? Error => _error;
-
     public bool IsError => Error != null;
+
+    public ServiceError? Error => _error;
 
     bool IUnionMembers.HasValue => true;
 
-    object? IUnionMembers.Value => _error ?? (object)new OkResult();
+    object IUnionMembers.Value => _error ?? (object)new OkResult();
 
     bool IUnionMembers.TryGetValue(out OkResult value)
     {

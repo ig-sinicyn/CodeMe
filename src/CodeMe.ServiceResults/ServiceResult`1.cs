@@ -16,10 +16,10 @@ public readonly struct ServiceResult<T> : IEquatable<ServiceResult<T>>, ServiceR
     public static implicit operator ServiceResult<T>(ServiceError error) => new(error);
 
     public static implicit operator ServiceResult(ServiceResult<T> result) =>
-        result.IsError ? new ServiceResult(result._error.GetValueOrDefault()) : new ServiceResult();
+        result is ServiceError error ? error : new OkResult();
 
-    private readonly ServiceError? _error;
     private readonly T _value;
+    private readonly ServiceError? _error;
 
     public ServiceResult(T value)
     {
@@ -33,17 +33,17 @@ public readonly struct ServiceResult<T> : IEquatable<ServiceResult<T>>, ServiceR
         _error = error;
     }
 
+    public bool IsError => _error != null;
+
     public T Value => _error == null
         ? _value
         : throw new ServiceException(_error.Value);
-
-    public bool IsError => _error != null;
 
     public ServiceError? Error => _error;
 
     bool IUnionMembers.HasValue => _error != null || _value != null;
 
-    object IUnionMembers.Value => _error ?? (object)_value!;
+    object? IUnionMembers.Value => _error ?? (object?)_value;
 
     bool IUnionMembers.TryGetValue(out T value)
     {
@@ -58,22 +58,22 @@ public readonly struct ServiceResult<T> : IEquatable<ServiceResult<T>>, ServiceR
     }
 
     public bool Equals(ServiceResult<T> other) =>
-        _error == null
-            ? EqualityComparer<T>.Default.Equals(_value, other._value)
-            : _error.Equals(other._error);
+        _error?.Equals(other._error)
+        ?? EqualityComparer<T>.Default.Equals(_value, other._value);
 
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is ServiceResult<T> x && Equals(x);
 
     public override int GetHashCode() =>
         _error?.GetHashCode()
-        ?? EqualityComparer<T>.Default.GetHashCode(_value!);
+        ?? EqualityComparer<T>.Default.GetHashCode(_value);
 
     public interface IUnionMembers
     {
         public static ServiceResult<T> Create(T value) => new(value);
+
         public static ServiceResult<T> Create(ServiceError error) => new(error);
 
-        public object Value { get; }
+        public object? Value { get; }
 
         public bool HasValue { get; }
 
