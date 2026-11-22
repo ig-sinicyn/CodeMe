@@ -1,8 +1,6 @@
-﻿using CodeMe.ServiceErrors;
+﻿namespace CodeMe.ServiceErrors.Results;
 
-namespace CodeMe.ServiceResults;
-
-public static class ServiceResultExtensions
+public static class ChainingExtensions
 {
     public static ServiceResult With(this ServiceResult source, Func<ServiceResult> callback) =>
         source switch

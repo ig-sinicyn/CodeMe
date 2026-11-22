@@ -1,4 +1,4 @@
-﻿namespace CodeMe.ServiceResults;
+﻿namespace CodeMe.ServiceErrors.Results;
 
 public readonly struct OkResult : IEquatable<OkResult>
 {

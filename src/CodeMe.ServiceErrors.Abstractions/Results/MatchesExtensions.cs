@@ -1,6 +1,4 @@
-using CodeMe.ServiceErrors;
-
-namespace CodeMe.ServiceResults;
+namespace CodeMe.ServiceErrors.Results;
 
 /// <summary>
 /// Provides extension methods for matching service result errors.

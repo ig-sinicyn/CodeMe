@@ -1,8 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using CodeMe.ServiceErrors;
 
-namespace CodeMe.ServiceResults;
+namespace CodeMe.ServiceErrors.Results;
 
 [Union]
 public readonly struct ServiceResult<T> : IEquatable<ServiceResult<T>>, ServiceResult<T>.IUnionMembers
@@ -33,6 +32,7 @@ public readonly struct ServiceResult<T> : IEquatable<ServiceResult<T>>, ServiceR
         _error = error;
     }
 
+    [MemberNotNullWhen(true, nameof(Error))]
     public bool IsError => _error != null;
 
     public T Value => _error == null

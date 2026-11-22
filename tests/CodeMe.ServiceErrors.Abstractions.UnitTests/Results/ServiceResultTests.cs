@@ -1,6 +1,6 @@
-﻿using CodeMe.ServiceErrors;
+﻿using CodeMe.ServiceErrors.Results;
 
-namespace CodeMe.ServiceResults.UnitTests;
+namespace CodeMe.ServiceErrors.UnitTests.Results;
 
 public class ServiceResultTests
 {

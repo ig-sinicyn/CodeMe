@@ -1,4 +1,4 @@
-namespace CodeMe.ServiceErrors.Abstractions.UnitTests;
+namespace CodeMe.ServiceErrors.UnitTests;
 
 public class ErrorGroupUriTests
 {

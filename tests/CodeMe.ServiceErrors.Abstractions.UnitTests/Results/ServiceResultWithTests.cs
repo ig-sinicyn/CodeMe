@@ -1,9 +1,9 @@
-﻿using CodeMe.ServiceErrors;
-using static CodeMe.ServiceResults.ServiceResult;
+﻿using CodeMe.ServiceErrors.Results;
+using static CodeMe.ServiceErrors.Results.ServiceResult;
 
-namespace CodeMe.ServiceResults.UnitTests;
+namespace CodeMe.ServiceErrors.UnitTests.Results;
 
-public class ServiceResultOfTWithTests
+public class ServiceResultWithTests
 {
     private static readonly ErrorDescriptor _testErrorDescriptor = ErrorDescriptor.Internal(
         ErrorGroupUri.Create("err", "service"),
@@ -13,33 +13,33 @@ public class ServiceResultOfTWithTests
     private static readonly ServiceError _startTestError = new(_testErrorDescriptor, "StartError");
 
     [Fact]
-    public void WithForOkOfT_ShouldBeExpected()
+    public void WithForOk_ShouldBeExpected()
     {
         // Arrange
-        var result = Ok(1.0);
+        var result = Ok();
 
         // Act
         var callCount = 0;
         var withOk = result.With(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return Ok();
             });
         var withError = result.With(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return _testError;
             });
         var withValue = result.With(
-            x =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
-                return Ok((int)x + 2);
+                return Ok(2);
             });
         var withGenericError = result.With(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return FromError<int>(_testError);
@@ -55,40 +55,40 @@ public class ServiceResultOfTWithTests
             .And.Be(FromError(_testError));
         withValue
             .Should().BeOfType<ServiceResult<int>>()
-            .And.Be(Ok(3));
+            .And.Be(Ok(2));
         withGenericError
             .Should().BeOfType<ServiceResult<int>>()
             .And.Be(FromError<int>(_testError));
     }
 
     [Fact]
-    public void WithForErrorOfT_ShouldBeExpected()
+    public void WithForError_ShouldBeExpected()
     {
         // Arrange
-        var result = FromError<double>(_startTestError);
+        var result = FromError(_startTestError);
 
         // Act
         var callCount = 0;
         var withOk = result.With(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return Ok();
             });
         var withError = result.With(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return _testError;
             });
         var withValue = result.With(
-            x =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
-                return Ok((int)x + 2);
+                return Ok(2);
             });
         var withGenericError = result.With(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return FromError<int>(_testError);
@@ -111,36 +111,36 @@ public class ServiceResultOfTWithTests
     }
 
     [Fact]
-    public async Task WithAsyncForOkOfT_ShouldBeExpected()
+    public async Task WithAsyncForOk_ShouldBeExpected()
     {
         // Arrange
-        var result = Ok(1.0);
+        var result = Ok();
 
         // Act
         var callCount = 0;
         var withOk = await result.WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
                 return Ok();
             });
         var withError = await result.WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
                 return _testError;
             });
         var withValue = await result.WithAsync(
-            async x =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
-                return Ok((int)x + 2);
+                return Ok(2);
             });
         var withGenericError = await result.WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
@@ -157,43 +157,43 @@ public class ServiceResultOfTWithTests
             .And.Be(FromError(_testError));
         withValue
             .Should().BeOfType<ServiceResult<int>>()
-            .And.Be(Ok(3));
+            .And.Be(Ok(2));
         withGenericError
             .Should().BeOfType<ServiceResult<int>>()
             .And.Be(FromError<int>(_testError));
     }
 
     [Fact]
-    public async Task WithAsyncForErrorOfT_ShouldBeExpected()
+    public async Task WithAsyncForError_ShouldBeExpected()
     {
         // Arrange
-        var result = FromError<double>(_startTestError);
+        var result = FromError(_startTestError);
 
         // Act
         var callCount = 0;
         var withOk = await result.WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
                 return Ok();
             });
         var withError = await result.WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
                 return _testError;
             });
         var withValue = await result.WithAsync(
-            async x =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
-                return Ok((int)x + 2);
+                return Ok(2);
             });
         var withGenericError = await result.WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
@@ -217,33 +217,33 @@ public class ServiceResultOfTWithTests
     }
 
     [Fact]
-    public async Task WithForOkOfTTask_ShouldBeExpected()
+    public async Task WithForOkTask_ShouldBeExpected()
     {
         // Arrange
-        var resultFactory = () => new ValueTask<ServiceResult<double>>(Ok(1.0));
+        var resultFactory = () => new ValueTask<ServiceResult>(Ok());
 
         // Act
         var callCount = 0;
         var withOk = await resultFactory().WithAsync(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return Ok();
             });
         var withError = await resultFactory().WithAsync(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return _testError;
             });
         var withValue = await resultFactory().WithAsync(
-            x =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
-                return Ok((int)x + 2);
+                return Ok(2);
             });
         var withGenericError = await resultFactory().WithAsync(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return FromError<int>(_testError);
@@ -259,40 +259,40 @@ public class ServiceResultOfTWithTests
             .And.Be(FromError(_testError));
         withValue
             .Should().BeOfType<ServiceResult<int>>()
-            .And.Be(Ok(3));
+            .And.Be(Ok(2));
         withGenericError
             .Should().BeOfType<ServiceResult<int>>()
             .And.Be(FromError<int>(_testError));
     }
 
     [Fact]
-    public async Task WithForErrorOfTTask_ShouldBeExpected()
+    public async Task WithForErrorTask_ShouldBeExpected()
     {
         // Arrange
-        var resultFactory = () => new ValueTask<ServiceResult<double>>(_startTestError);
+        var resultFactory = () => new ValueTask<ServiceResult>(_startTestError);
 
         // Act
         var callCount = 0;
         var withOk = await resultFactory().WithAsync(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return Ok();
             });
         var withError = await resultFactory().WithAsync(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return _testError;
             });
         var withValue = await resultFactory().WithAsync(
-            x =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
-                return Ok((int)x + 2);
+                return Ok(2);
             });
         var withGenericError = await resultFactory().WithAsync(
-            _ =>
+            () =>
             {
                 Interlocked.Increment(ref callCount);
                 return FromError<int>(_testError);
@@ -315,36 +315,36 @@ public class ServiceResultOfTWithTests
     }
 
     [Fact]
-    public async Task WithAsyncForOkOfTTask_ShouldBeExpected()
+    public async Task WithAsyncForOkTask_ShouldBeExpected()
     {
         // Arrange
-        var resultFactory = () => new ValueTask<ServiceResult<double>>(Ok(1.0));
+        var resultFactory = () => new ValueTask<ServiceResult>(Ok());
 
         // Act
         var callCount = 0;
         var withOk = await resultFactory().WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
                 return Ok();
             });
         var withError = await resultFactory().WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
                 return _testError;
             });
         var withValue = await resultFactory().WithAsync(
-            async x =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
-                return Ok((int)x + 2);
+                return Ok(2);
             });
         var withGenericError = await resultFactory().WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
@@ -361,43 +361,43 @@ public class ServiceResultOfTWithTests
             .And.Be(FromError(_testError));
         withValue
             .Should().BeOfType<ServiceResult<int>>()
-            .And.Be(Ok(3));
+            .And.Be(Ok(2));
         withGenericError
             .Should().BeOfType<ServiceResult<int>>()
             .And.Be(FromError<int>(_testError));
     }
 
     [Fact]
-    public async Task WithAsyncForErrorOfTTask_ShouldBeExpected()
+    public async Task WithAsyncForErrorTask_ShouldBeExpected()
     {
         // Arrange
-        var resultFactory = () => new ValueTask<ServiceResult<double>>(_startTestError);
+        var resultFactory = () => new ValueTask<ServiceResult>(_startTestError);
 
         // Act
         var callCount = 0;
         var withOk = await resultFactory().WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
                 return Ok();
             });
         var withError = await resultFactory().WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
                 return _testError;
             });
         var withValue = await resultFactory().WithAsync(
-            async x =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);
-                return Ok((int)x + 2);
+                return Ok(2);
             });
         var withGenericError = await resultFactory().WithAsync(
-            async _ =>
+            async () =>
             {
                 await Task.Yield();
                 Interlocked.Increment(ref callCount);

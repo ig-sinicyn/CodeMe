@@ -10,12 +10,10 @@
     <Project Path="src/CodeMe.Basics/CodeMe.Basics.csproj" Id="94f870ce-be26-47a9-a689-260ae5991902" />
     <Project Path="src/CodeMe.ServiceErrors.Abstractions/CodeMe.ServiceErrors.Abstractions.csproj" Id="e04b04e8-ff7b-47e4-89e2-b9c87295c0c2" />
     <Project Path="src/CodeMe.ServiceErrors/CodeMe.ServiceErrors.csproj" />
-    <Project Path="src/CodeMe.ServiceResults/CodeMe.ServiceResults.csproj" Id="5b559076-e9f7-4504-9a00-89cab38a67a4" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CodeMe.Basics.UnitTests/CodeMe.Basics.UnitTests.csproj" />
     <Project Path="tests/CodeMe.ServiceErrors.Abstractions.UnitTests/CodeMe.ServiceErrors.Abstractions.UnitTests.csproj" Id="e5bd77fa-a78a-4e30-a69b-1d03531274dd" />
     <Project Path="tests/CodeMe.ServiceErrors.UnitTests/CodeMe.ServiceErrors.UnitTests.csproj" />
-    <Project Path="tests/CodeMe.ServiceResults.UnitTests/CodeMe.ServiceResults.UnitTests.csproj" Id="3edeca79-6b2a-4d9b-b54b-627856346b50" />
   </Folder>
 </Solution>
