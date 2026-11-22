@@ -4,16 +4,16 @@ CodeMe.ServiceErrors is a library for describing service-level errors as first-c
 
 ## How it works
 
-The library separates an error's identity, its semantics, and its transport shape:
+Main concepts of the library are:
 
 1. `ErrorGroupUri` and `ErrorUri` describe a stable problem type such as `problem://orders-api/orders/order-not-found`. The URI format is compatible with [RFC 9457: Problem Details for HTTP APIs](https://datatracker.ietf.org/doc/html/rfc9457).
 2. `ErrorDescriptor` adds the runtime semantics: HTTP-like status, transience, and severity.
 3. `ServiceError` is the value you pass around inside your application. It combines the descriptor with a human-readable message and optional inner exception or nested errors, so the contract stays explicit without forcing every caller to use exceptions.
-4. `IServiceErrorFactory` is the bridge between the in-process model and the outside world. It can convert a `ServiceError` into a serializable `ServiceErrorDto`, restore a `ServiceError` from a DTO, or create an exception for a known error.
-5. `ServiceException` and `IServiceException` let you propagate the same error as an exception while preserving the underlying descriptor. When the factory knows about a registered error, it can instantiate a typed exception for that descriptor or its containing group.
-6. Matching helpers (`Matches`, `MatchesAny`) compare descriptors, error groups, error URIs, and status codes so callers can branch on well-known errors without hard-coding strings.
+4. `ServiceError` is the value you pass around inside your application. It combines the descriptor with a human-readable message and optional inner exception or nested errors, so the contract stays explicit without forcing every caller to use exceptions.
+5. `ServiceResult` and `ServiceResult<T>` are union types for passing (ok|error) pairs, chaining calls and so on. Please check [documentation](ServiceResults.md) for more details.
+6. `ServiceException` and `IServiceException` let you propagate the same error as an exception while preserving the underlying descriptor. When the factory knows about a registered error, it can instantiate a typed exception for that descriptor or its containing group.
+7. Matching helpers (`Matches`, `MatchesAny`) compare descriptors, error groups, error URIs, and status codes so callers can branch on well-known errors without hard-coding strings.
 
-In practice, you usually define a small set of well-known descriptors once, register them in DI, create and inspect `ServiceError` values in your domain code, and serialize them at API boundaries. That gives you a contract that is stable for tooling, readable for humans, and cheap to process in production code.
 
 ## Basic examples
 
@@ -34,6 +34,30 @@ if (error.Matches(descriptor))
 {
     // handle the error
 }
+```
+
+Service results:
+```csharp
+using CodeMe.ServiceErrors;
+using CodeMe.ServiceErrors.Results;
+
+var ordersGroup = ErrorGroupUri.Create("problem", "orders-api", "orders");
+var orderNotFound = ErrorDescriptor.NotFound(ordersGroup, "order-not-found");
+
+var orders = new Dictionary<int, Order>();
+var result = GetOrder(123);
+var message = result switch
+{
+    Order x => x.Name,
+    ServiceError error => error.Message
+};
+Console.WriteLine(message);
+
+ServiceResult<Order> GetOrder(int id) => orders.TryGetValue(id, out var order)
+    ? order
+    : new ServiceError(orderNotFound, $"Order {id} not found");
+
+internal record Order(int Id, string Name);
 ```
 
 Well-known errors, conversions and DI registration:

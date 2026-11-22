@@ -9,21 +9,21 @@ public class ServiceErrorFactoryExceptionTests
 {
     private static readonly DefaultServiceErrorFactoryOptions _defaultOptions =
         DefaultServiceErrorFactoryOptions.Create(UnknownErrorsGroup) with
-        {
-            ErrorCodeMapping = new Dictionary<string, ErrorDescriptor>
             {
-                [UserNotFound.ShortCode] = UserNotFound
-            },
-            DefaultErrorFactory = error => new TestServiceException(error),
-            ErrorFactories = new Dictionary<ErrorUri, Func<ServiceError, IServiceException>>
-            {
-                [UserNotFound.Type] = error => new UserNotFoundException(error)
-            },
-            ErrorGroupFactories = new Dictionary<ErrorGroupUri, Func<ServiceError, IServiceException>>
-            {
-                [ExternalRootGroup] = error => new ExternalServiceException(error)
-            }
-        };
+                ErrorCodeMapping = new Dictionary<string, ErrorDescriptor>
+                    {
+                        [UserNotFound.ShortCode] = UserNotFound
+                    },
+                DefaultErrorFactory = error => new TestServiceException(error),
+                ErrorFactories = new Dictionary<ErrorUri, Func<ServiceError, IServiceException>>
+                    {
+                        [UserNotFound.Type] = error => new UserNotFoundException(error)
+                    },
+                ErrorGroupFactories = new Dictionary<ErrorGroupUri, Func<ServiceError, IServiceException>>
+                    {
+                        [ExternalRootGroup] = error => new ExternalServiceException(error)
+                    }
+            };
 
     [Fact]
     public void CreateException_MatchByCode_ShouldBeExpected()
@@ -31,27 +31,30 @@ public class ServiceErrorFactoryExceptionTests
         // Arrange
         var factory = new DefaultServiceErrorFactory(_defaultOptions);
         var dto = new ServiceErrorDto
-        {
-            Category = UserNotFound.Category,
-            Code = UserNotFound.ShortCode,
-            StatusCode = UserNotFound.StatusCode,
-            Message = "Some detail"
-        };
+            {
+                Category = UserNotFound.Category,
+                Code = UserNotFound.ShortCode,
+                StatusCode = UserNotFound.StatusCode,
+                Message = "Some detail"
+            };
         var error = new ServiceError(UserNotFound, "Some detail");
 
         // Act
         var fromDto = factory.CreateException(dto);
-        var fromError = factory.CreateException(dto);
+        var fromError = factory.CreateException(error);
+        var fromException = factory.CreateException(new ServiceException(error));
 
         // Assert
         var expected = new UserNotFoundException("Some detail");
 
         fromDto.Should().BeOfType<UserNotFoundException>();
         fromError.Should().BeOfType<UserNotFoundException>();
+        fromException.Should().BeOfType<UserNotFoundException>();
 
         expected.Error.Should().Be(error);
         fromDto.Error.Should().Be(expected.Error);
         fromError.Error.Should().Be(expected.Error);
+        fromException.Error.Should().Be(expected.Error);
     }
 
     [Fact]
@@ -60,26 +63,29 @@ public class ServiceErrorFactoryExceptionTests
         // Arrange
         var factory = new DefaultServiceErrorFactory(_defaultOptions);
         var dto = new ServiceErrorDto
-        {
-            Scheme = ExternalInvalidAmountError.Scheme,
-            Application = ExternalInvalidAmountError.Application,
-            Category = ExternalInvalidAmountError.Category,
-            Code = ExternalInvalidAmountError.ShortCode,
-            StatusCode = ExternalInvalidAmountError.StatusCode,
-            Message = "Some detail"
-        };
+            {
+                Scheme = ExternalInvalidAmountError.Scheme,
+                Application = ExternalInvalidAmountError.Application,
+                Category = ExternalInvalidAmountError.Category,
+                Code = ExternalInvalidAmountError.ShortCode,
+                StatusCode = ExternalInvalidAmountError.StatusCode,
+                Message = "Some detail"
+            };
         var error = new ServiceError(ExternalInvalidAmountError, "Some detail");
 
         // Act
         var fromDto = factory.CreateException(dto);
-        var fromError = factory.CreateException(dto);
+        var fromError = factory.CreateException(error);
+        var fromException = factory.CreateException(new ServiceException(error));
 
         // Assert
         fromDto.Should().BeOfType<ExternalServiceException>();
         fromError.Should().BeOfType<ExternalServiceException>();
+        fromException.Should().BeOfType<ExternalServiceException>();
 
         fromDto.Error.Should().Be(error);
         fromError.Error.Should().Be(error);
+        fromException.Error.Should().Be(error);
     }
 
     [Fact]
@@ -88,23 +94,26 @@ public class ServiceErrorFactoryExceptionTests
         // Arrange
         var factory = new DefaultServiceErrorFactory(_defaultOptions);
         var dto = new ServiceErrorDto
-        {
-            Category = UserAlreadyExists.Category,
-            Code = UserAlreadyExists.ShortCode,
-            StatusCode = UserAlreadyExists.StatusCode,
-            Message = "Some detail"
-        };
+            {
+                Category = UserAlreadyExists.Category,
+                Code = UserAlreadyExists.ShortCode,
+                StatusCode = UserAlreadyExists.StatusCode,
+                Message = "Some detail"
+            };
         var error = new ServiceError(UserAlreadyExists, "Some detail");
 
         // Act
         var fromDto = factory.CreateException(dto);
-        var fromError = factory.CreateException(dto);
+        var fromError = factory.CreateException(error);
+        var fromException = factory.CreateException(new ServiceException(error));
 
         // Assert
         fromDto.Should().BeOfType<TestServiceException>();
         fromError.Should().BeOfType<TestServiceException>();
+        fromException.Should().BeOfType<TestServiceException>();
 
         fromDto.Error.Should().Be(error);
         fromError.Error.Should().Be(error);
+        fromException.Error.Should().Be(error);
     }
 }
