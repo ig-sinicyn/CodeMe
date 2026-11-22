@@ -58,8 +58,12 @@ public readonly struct ServiceResult<T> : IEquatable<ServiceResult<T>>, ServiceR
     }
 
     public bool Equals(ServiceResult<T> other) =>
-        _error?.Equals(other._error)
-        ?? EqualityComparer<T>.Default.Equals(_value, other._value);
+        _error switch
+        {
+            { } error when other._error is { } otherError => error.Equals(otherError),
+            null when other._error is null => EqualityComparer<T>.Default.Equals(_value, other._value),
+            _ => false
+        };
 
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is ServiceResult<T> x && Equals(x);
 

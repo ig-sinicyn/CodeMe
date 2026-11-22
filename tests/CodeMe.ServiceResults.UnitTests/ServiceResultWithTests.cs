@@ -32,12 +32,6 @@ public class ServiceResultWithTests
                 Interlocked.Increment(ref callCount);
                 return _testError;
             });
-        var withRawValue = result.With(
-            () =>
-            {
-                Interlocked.Increment(ref callCount);
-                return Ok(2);
-            });
         var withValue = result.With(
             () =>
             {

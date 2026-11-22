@@ -55,7 +55,13 @@ public readonly struct ServiceResult : IEquatable<ServiceResult>, ServiceResult.
         return _error != null;
     }
 
-    public bool Equals(ServiceResult other) => _error?.Equals(other._error) ?? false;
+    public bool Equals(ServiceResult other) =>
+        _error switch
+        {
+            { } error when other._error is { } otherError => error.Equals(otherError),
+            null when other._error is null => true,
+            _ => false
+        };
 
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is ServiceResult result && Equals(result);
 
