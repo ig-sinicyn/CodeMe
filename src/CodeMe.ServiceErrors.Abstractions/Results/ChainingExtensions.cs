@@ -1,4 +1,4 @@
-﻿namespace CodeMe.ServiceErrors.Results;
+namespace CodeMe.ServiceErrors.Results;
 
 /// <summary>
 /// Provides extension methods for chaining operations on service results.
@@ -8,9 +8,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Executes a callback when the source result is successful.
     /// </summary>
-    /// <param name="source">The source result.</param>
-    /// <param name="callback">The operation to execute on success.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ServiceResult With(this ServiceResult source, Func<ServiceResult> callback) =>
         source switch
         {
@@ -21,10 +18,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Executes a callback and returns a typed result when the source result is successful.
     /// </summary>
-    /// <typeparam name="T">The callback result value type.</typeparam>
-    /// <param name="source">The source result.</param>
-    /// <param name="callback">The operation to execute on success.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ServiceResult<T> With<T>(this ServiceResult source, Func<ServiceResult<T>> callback) =>
         source switch
         {
@@ -35,10 +28,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Executes a callback with the source value when the typed result is successful.
     /// </summary>
-    /// <typeparam name="T">The source value type.</typeparam>
-    /// <param name="source">The source result.</param>
-    /// <param name="callback">The operation to execute with the successful value.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ServiceResult With<T>(this ServiceResult<T> source, Func<T, ServiceResult> callback) =>
         source switch
         {
@@ -50,11 +39,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Executes a callback with the source value and returns a second typed result when successful.
     /// </summary>
-    /// <typeparam name="T1">The source value type.</typeparam>
-    /// <typeparam name="T2">The callback result value type.</typeparam>
-    /// <param name="source">The source result.</param>
-    /// <param name="callback">The operation to execute with the successful value.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ServiceResult<T2> With<T1, T2>(this ServiceResult<T1> source, Func<T1, ServiceResult<T2>> callback) =>
         source switch
         {
@@ -66,9 +50,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Asynchronously executes a callback when the source result is successful.
     /// </summary>
-    /// <param name="source">The source result.</param>
-    /// <param name="callback">The asynchronous operation to execute on success.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult> WithAsync(
         this ServiceResult source,
         Func<ValueTask<ServiceResult>> callback) =>
@@ -81,10 +62,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Asynchronously executes a callback and returns a typed result when the source result is successful.
     /// </summary>
-    /// <typeparam name="T">The callback result value type.</typeparam>
-    /// <param name="source">The source result.</param>
-    /// <param name="callback">The asynchronous operation to execute on success.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult<T>> WithAsync<T>(
         this ServiceResult source,
         Func<ValueTask<ServiceResult<T>>> callback) =>
@@ -97,10 +74,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Asynchronously executes a callback with the source value when the typed result is successful.
     /// </summary>
-    /// <typeparam name="T">The source value type.</typeparam>
-    /// <param name="source">The source result.</param>
-    /// <param name="callback">The asynchronous operation to execute with the successful value.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult> WithAsync<T>(
         this ServiceResult<T> source,
         Func<T, ValueTask<ServiceResult>> callback) =>
@@ -114,11 +87,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Asynchronously executes a callback with the source value and returns a second typed result when successful.
     /// </summary>
-    /// <typeparam name="T1">The source value type.</typeparam>
-    /// <typeparam name="T2">The callback result value type.</typeparam>
-    /// <param name="source">The source result.</param>
-    /// <param name="callback">The asynchronous operation to execute with the successful value.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult<T2>> WithAsync<T1, T2>(
         this ServiceResult<T1> source,
         Func<T1, ValueTask<ServiceResult<T2>>> callback) =>
@@ -132,9 +100,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Awaits a source result and executes a synchronous callback on success.
     /// </summary>
-    /// <param name="source">The asynchronous source result.</param>
-    /// <param name="callback">The operation to execute on success.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult> WithAsync(
         this ValueTask<ServiceResult> source,
         Func<ServiceResult> callback)
@@ -152,10 +117,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Awaits a source result and executes a synchronous callback that returns a typed result on success.
     /// </summary>
-    /// <typeparam name="T">The callback result value type.</typeparam>
-    /// <param name="source">The asynchronous source result.</param>
-    /// <param name="callback">The operation to execute on success.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult<T>> WithAsync<T>(
         this ValueTask<ServiceResult> source,
         Func<ServiceResult<T>> callback)
@@ -173,10 +134,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Awaits a typed source result and executes a synchronous callback with its value on success.
     /// </summary>
-    /// <typeparam name="T">The source value type.</typeparam>
-    /// <param name="source">The asynchronous source result.</param>
-    /// <param name="callback">The operation to execute with the successful value.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult> WithAsync<T>(
         this ValueTask<ServiceResult<T>> source,
         Func<T, ServiceResult> callback)
@@ -194,11 +151,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Awaits a typed source result and executes a synchronous callback that returns a second typed result on success.
     /// </summary>
-    /// <typeparam name="T1">The source value type.</typeparam>
-    /// <typeparam name="T2">The callback result value type.</typeparam>
-    /// <param name="source">The asynchronous source result.</param>
-    /// <param name="callback">The operation to execute with the successful value.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult<T2>> WithAsync<T1, T2>(
         this ValueTask<ServiceResult<T1>> source,
         Func<T1, ServiceResult<T2>> callback)
@@ -216,9 +168,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Awaits a source result and executes an asynchronous callback on success.
     /// </summary>
-    /// <param name="source">The asynchronous source result.</param>
-    /// <param name="callback">The asynchronous operation to execute on success.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult> WithAsync(
         this ValueTask<ServiceResult> source,
         Func<ValueTask<ServiceResult>> callback)
@@ -234,10 +183,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Awaits a source result and executes an asynchronous callback that returns a typed result on success.
     /// </summary>
-    /// <typeparam name="T">The callback result value type.</typeparam>
-    /// <param name="source">The asynchronous source result.</param>
-    /// <param name="callback">The asynchronous operation to execute on success.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult<T>> WithAsync<T>(
         this ValueTask<ServiceResult> source,
         Func<ValueTask<ServiceResult<T>>> callback)
@@ -253,10 +198,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Awaits a typed source result and executes an asynchronous callback with its value on success.
     /// </summary>
-    /// <typeparam name="T">The source value type.</typeparam>
-    /// <param name="source">The asynchronous source result.</param>
-    /// <param name="callback">The asynchronous operation to execute with the successful value.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult> WithAsync<T>(
         this ValueTask<ServiceResult<T>> source,
         Func<T, ValueTask<ServiceResult>> callback)
@@ -272,11 +213,6 @@ public static class ChainingExtensions
     /// <summary>
     /// Awaits a typed source result and executes an asynchronous callback that returns a second typed result on success.
     /// </summary>
-    /// <typeparam name="T1">The source value type.</typeparam>
-    /// <typeparam name="T2">The callback result value type.</typeparam>
-    /// <param name="source">The asynchronous source result.</param>
-    /// <param name="callback">The asynchronous operation to execute with the successful value.</param>
-    /// <returns>The callback result on success or the source error on failure.</returns>
     public static ValueTask<ServiceResult<T2>> WithAsync<T1, T2>(
         this ValueTask<ServiceResult<T1>> source,
         Func<T1, ValueTask<ServiceResult<T2>>> callback)
