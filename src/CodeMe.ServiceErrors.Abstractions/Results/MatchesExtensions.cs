@@ -8,12 +8,19 @@ public static class MatchesExtensions
     /// <summary>
     /// Determines whether the service result contains an error with the specified status code.
     /// </summary>
+    /// <param name="result">The service result to inspect.</param>
+    /// <param name="statusCode">The status code to match.</param>
+    /// <returns><see langword="true"/> if the result contains a matching error; otherwise, <see langword="false"/>.</returns>
     public static bool Matches(this ServiceResult result, ErrorStatusCode statusCode) =>
         result is ServiceError error && error.MatchesAny(statusCode);
 
     /// <summary>
     /// Determines whether the service result contains an error with the specified status code.
     /// </summary>
+    /// <typeparam name="T">The result value type.</typeparam>
+    /// <param name="result">The service result to inspect.</param>
+    /// <param name="statusCode">The status code to match.</param>
+    /// <returns><see langword="true"/> if the result contains a matching error; otherwise, <see langword="false"/>.</returns>
     public static bool Matches<T>(this ServiceResult<T> result, ErrorStatusCode statusCode) =>
         result is ServiceError error && error.MatchesAny(statusCode);
 

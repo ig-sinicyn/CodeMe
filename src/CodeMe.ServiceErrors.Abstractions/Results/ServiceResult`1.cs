@@ -3,42 +3,83 @@ using System.Runtime.CompilerServices;
 
 namespace CodeMe.ServiceErrors.Results;
 
+/// <summary>
+/// Represents the outcome of an operation that returns a value of type <typeparamref name="T"/> or fails with a <see cref="ServiceError"/>.
+/// </summary>
+/// <typeparam name="T">The type of the successful value.</typeparam>
 [Union]
 public readonly struct ServiceResult<T> : IEquatable<ServiceResult<T>>, ServiceResult<T>.IUnionMembers
 {
+    /// <summary>
+    /// Determines whether two results are equal.
+    /// </summary>
     public static bool operator ==(ServiceResult<T> left, ServiceResult<T> right) => Equals(left, right);
 
+    /// <summary>
+    /// Determines whether two results are not equal.
+    /// </summary>
     public static bool operator !=(ServiceResult<T> left, ServiceResult<T> right) => !(left == right);
 
+    /// <summary>
+    /// Creates a successful result from a value.
+    /// </summary>
+    /// <param name="value">The successful value.</param>
     public static implicit operator ServiceResult<T>(T value) => new(value);
 
+    /// <summary>
+    /// Creates a failed result from a service error.
+    /// </summary>
+    /// <param name="error">The service error.</param>
     public static implicit operator ServiceResult<T>(ServiceError error) => new(error);
 
+    /// <summary>
+    /// Converts a typed result to an untyped service result.
+    /// </summary>
+    /// <param name="result">The typed result to convert.</param>
     public static implicit operator ServiceResult(ServiceResult<T> result) =>
         result is ServiceError error ? error : new OkResult();
 
     private readonly T _value;
     private readonly ServiceError? _error;
 
+    /// <summary>
+    /// Initializes a successful result.
+    /// </summary>
+    /// <param name="value">The successful value.</param>
     public ServiceResult(T value)
     {
         _value = value;
         _error = null;
     }
 
+    /// <summary>
+    /// Initializes a failed result.
+    /// </summary>
+    /// <param name="error">The service error.</param>
     public ServiceResult(ServiceError error)
     {
         _value = default!;
         _error = error;
     }
 
+    /// <summary>
+    /// Gets a value indicating whether this result contains a service error.
+    /// </summary>
     [MemberNotNullWhen(true, nameof(Error))]
     public bool IsError => _error != null;
 
+    /// <summary>
+    /// Gets the successful value.
+    /// </summary>
+    /// <returns>The successful value.</returns>
+    /// <exception cref="ServiceException">The result contains a service error.</exception>
     public T Value => _error == null
         ? _value
         : throw new ServiceException(_error.Value);
 
+    /// <summary>
+    /// Gets the service error when this result represents a failure.
+    /// </summary>
     public ServiceError? Error => _error;
 
     bool IUnionMembers.HasValue => _error != null || _value != null;
@@ -57,6 +98,11 @@ public readonly struct ServiceResult<T> : IEquatable<ServiceResult<T>>, ServiceR
         return _error != null;
     }
 
+    /// <summary>
+    /// Determines whether this result is equal to another result.
+    /// </summary>
+    /// <param name="other">The other result to compare.</param>
+    /// <returns><see langword="true"/> if the results are equal; otherwise, <see langword="false"/>.</returns>
     public bool Equals(ServiceResult<T> other) =>
         _error switch
         {
@@ -65,24 +111,58 @@ public readonly struct ServiceResult<T> : IEquatable<ServiceResult<T>>, ServiceR
             _ => false
         };
 
+    /// <inheritdoc/>
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is ServiceResult<T> x && Equals(x);
 
+    /// <summary>
+    /// Returns the hash code for this result.
+    /// </summary>
+    /// <returns>The hash code for this result.</returns>
     public override int GetHashCode() =>
         _error?.GetHashCode()
         ?? EqualityComparer<T>.Default.GetHashCode(_value);
 
+    /// <summary>
+    /// Defines the union members of <see cref="ServiceResult{T}"/>.
+    /// </summary>
     public interface IUnionMembers
     {
+        /// <summary>
+        /// Creates a successful result.
+        /// </summary>
+        /// <param name="value">The successful value.</param>
+        /// <returns>A successful <see cref="ServiceResult{T}"/>.</returns>
         public static ServiceResult<T> Create(T value) => new(value);
 
+        /// <summary>
+        /// Creates a failed result.
+        /// </summary>
+        /// <param name="error">The service error.</param>
+        /// <returns>A failed <see cref="ServiceResult{T}"/>.</returns>
         public static ServiceResult<T> Create(ServiceError error) => new(error);
 
+        /// <summary>
+        /// Gets the current union value.
+        /// </summary>
         public object? Value { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether the union has a value.
+        /// </summary>
         public bool HasValue { get; }
 
+        /// <summary>
+        /// Attempts to get the successful value.
+        /// </summary>
+        /// <param name="value">The successful value when this result is successful.</param>
+        /// <returns><see langword="true"/> if this result is successful; otherwise, <see langword="false"/>.</returns>
         public bool TryGetValue(out T value);
 
+        /// <summary>
+        /// Attempts to get the service error.
+        /// </summary>
+        /// <param name="value">The service error when this result is failed.</param>
+        /// <returns><see langword="true"/> if this result is failed; otherwise, <see langword="false"/>.</returns>
         public bool TryGetValue(out ServiceError value);
     }
 }
